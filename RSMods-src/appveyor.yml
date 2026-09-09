@@ -1,0 +1,40 @@
+# configuration for "develop" branch
+-
+  branches:
+    only:
+    - develop
+  image: Visual Studio 2019
+  configuration: Release
+  before_build:
+    - ps: >-
+        nuget restore
+
+        $assemblyFile = "$env:APPVEYOR_BUILD_FOLDER\Installer\Properties\AssemblyInfo.cs"
+
+        $regex = new-object System.Text.RegularExpressions.Regex ('(AssemblyVersion(Attribute)?\s*\(\s*\")(.*)(\"\s*\))', [System.Text.RegularExpressions.RegexOptions]::MultiLine)
+
+        $content = [IO.File]::ReadAllText($assemblyFile)
+
+        $version = $null
+        
+        $match = $regex.Match($content)
+        
+        if($match.Success) {
+            $version = $match.groups[3].value
+        }
+        
+        $env:releaseVersion=$version
+  build:
+      parallel: true
+      verbosity: quiet
+  artifacts:
+  - path: 'Installer/bin/Release/RS2014-Mod-Installer.exe'
+    name: Installer
+  deploy:
+  - provider: GitHub
+    tag: RSModsInstaller-v$(releaseVersion)_OnCommit
+    release: RSModsInstaller-v$(releaseVersion)_OnCommit
+    auth_token:
+       secure: FpxYbQBC7Erwggi1wn7Zib5BB+f+V5rDUUel9N4gTmlgInq/zerKux7wF+YQK/E25oBeyVF+gvsJz3bjn+QtDV+soeqOrH39Q9Jbjd98m49y6DlE4EQSolmuEQkTMA6+
+    artifact: Installer
+    prerelease: true

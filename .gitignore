@@ -1,0 +1,33 @@
+# ---- MSVC / Visual Studio build output ----
+[Dd]ebug/
+[Rr]elease/
+[Ww]in32/
+[Xx]64/
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+*.obj
+*.pch
+*.ipch
+*.ilk
+*.idb
+*.tlog
+*.log
+*.lastbuildstate
+*.aps
+*.opendb
+*.VC.db
+ipch/
+
+# ---- Local artefacts, never commit ----
+build-out/
+*.psarc
+library.json
+__pycache__/
+*.pyc
+
+# ---- Game binaries: these live in the game folder, not here ----
+xinput1_3.dll
+D3DX9_42.dll

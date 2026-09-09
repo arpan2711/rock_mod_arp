@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rocksmith Song Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f4f6f9; --surface:#fff; --surface-2:#eef2f7; --raised:#fff;
+  --ink:#131a22; --ink-2:#4a5663; --ink-3:#7b8794;
+  --rule:#dbe2ea; --rule-soft:#e8edf3;
+  --accent:#0b6fa8; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.10);
+  --on:#2f7d32; --on-bg:rgba(63,204,12,.14);
+  --off:#7b8794; --off-bg:rgba(123,135,148,.12);
+  --warn:#8a5a00; --warn-bg:rgba(226,193,2,.18);
+  --stop:#a52a33; --stop-bg:rgba(255,79,90,.12);
+  --lead:#ff9216; --rhythm:#1dacf9; --combo:#c825ed; --bass:#3fcc0c; --vocals:#c99a00;
+  --shadow:0 1px 2px rgba(19,26,34,.05),0 10px 30px -22px rgba(19,26,34,.5);
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1319; --surface:#151c24; --surface-2:#1b232d; --raised:#1a222c;
+  --ink:#e8edf3; --ink-2:#a5b2bf; --ink-3:#74828f;
+  --rule:#26313f; --rule-soft:#1e2732;
+  --accent:#56c2fb; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.14);
+  --on:#7fd36a; --on-bg:rgba(63,204,12,.16);
+  --off:#74828f; --off-bg:rgba(116,130,143,.14);
+  --warn:#e0bc4a; --warn-bg:rgba(226,193,2,.14);
+  --stop:#ff8189; --stop-bg:rgba(255,79,90,.14);
+  --vocals:#e2c102;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -22px rgba(0,0,0,.9);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --surface:#151c24; --surface-2:#1b232d; --raised:#1a222c;
+  --ink:#e8edf3; --ink-2:#a5b2bf; --ink-3:#74828f;
+  --rule:#26313f; --rule-soft:#1e2732;
+  --accent:#56c2fb; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.14);
+  --on:#7fd36a; --on-bg:rgba(63,204,12,.16);
+  --off:#74828f; --off-bg:rgba(116,130,143,.14);
+  --warn:#e0bc4a; --warn-bg:rgba(226,193,2,.14);
+  --stop:#ff8189; --stop-bg:rgba(255,79,90,.14);
+  --vocals:#e2c102;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -22px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;
+  line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+
+/* ---------- masthead ---------- */
+.mast{padding:18px 22px 14px;border-bottom:1px solid var(--rule);background:var(--surface);
+  display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap}
+.mast h1{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:-.02em;margin:0;line-height:1}
+.mast .sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:5px;letter-spacing:.01em}
+.stats{display:flex;gap:22px;margin-left:auto;align-items:flex-end;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;gap:1px;min-width:60px}
+.stat .n{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.05;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.stat.on .n{color:var(--on)} .stat.off .n{color:var(--ink-3)} .stat.pending .n{color:var(--accent)}
+.iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;
+  padding:5px 9px;font-family:var(--mono);font-size:11px;cursor:pointer;line-height:1.4}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---------- toolbar ---------- */
+.tools{padding:12px 22px;border-bottom:1px solid var(--rule);background:var(--surface-2);
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.search{flex:1 1 260px;min-width:200px;position:relative}
+.search input{width:100%;padding:8px 11px;border:1px solid var(--rule);border-radius:3px;
+  background:var(--surface);color:var(--ink);font-family:var(--body);font-size:14px}
+.search input:focus{outline:2px solid var(--accent-line);outline-offset:-1px;border-color:transparent}
+.chips{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.chips .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);margin-right:3px}
+.chip{border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);border-radius:3px;
+  padding:4px 9px;font-size:12px;cursor:pointer;font-family:var(--body);line-height:1.5}
+.chip:hover{border-color:var(--ink-3)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:500}
+.bulk{display:flex;gap:4px;margin-left:auto}
+.bulk button{border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);border-radius:3px;
+  padding:5px 10px;font-size:12px;cursor:pointer;font-family:var(--body)}
+.bulk button:hover{border-color:var(--accent-line);color:var(--accent)}
+
+/* ---------- banner ---------- */
+.banner{padding:9px 22px;font-size:13px;display:none;align-items:center;gap:10px;
+  border-bottom:1px solid var(--rule)}
+.banner.show{display:flex}
+.banner.warn{background:var(--warn-bg);color:var(--warn)}
+.banner.stop{background:var(--stop-bg);color:var(--stop)}
+.banner.ok{background:var(--on-bg);color:var(--on)}
+
+/* ---------- table ---------- */
+.tablewrap{flex:1;overflow:auto;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:900px}
+thead th{position:sticky;top:0;z-index:2;background:var(--surface-2);text-align:left;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;padding:9px 10px;border-bottom:1px solid var(--rule);
+  white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--ink)}
+thead th.nosort{cursor:default}
+thead th .dir{color:var(--accent);margin-left:3px}
+tbody td{padding:0 10px;height:34px;border-bottom:1px solid var(--rule-soft);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+tbody tr:hover td{background:var(--accent-soft)}
+tbody tr.off td{color:var(--ink-3)}
+tbody tr.off td.title,tbody tr.off td.artist{color:var(--ink-3)}
+td.pick{width:34px;padding-left:14px;border-left:3px solid transparent}
+tr.chg td.pick{border-left-color:var(--accent-line)}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent-line);cursor:pointer;margin:0;display:block}
+td.artist{max-width:190px;font-weight:500}
+td.title{max-width:250px}
+td.album{max-width:190px;color:var(--ink-3)}
+td.num{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink-2);width:56px}
+td.tuning{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);max-width:130px}
+td.arr{width:118px}
+.badges{display:flex;gap:3px}
+.b{width:17px;height:17px;border-radius:2px;display:grid;place-items:center;
+  font-family:var(--mono);font-size:9.5px;font-weight:500;color:#0d1116;flex:none}
+.b.L{background:var(--lead)} .b.R{background:var(--rhythm)} .b.C{background:var(--combo);color:#fff}
+.b.B{background:var(--bass)} .b.V{background:var(--vocals)}
+td.src{width:74px}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+  padding:2px 5px;border-radius:2px}
+.tag.custom{background:rgba(200,37,237,.16);color:var(--combo)}
+.tag.official{background:var(--off-bg);color:var(--ink-3)}
+.tag.bundle{background:var(--warn-bg);color:var(--warn)}
+td.state{width:74px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.st-on{color:var(--on)} .st-off{color:var(--ink-3)}
+.st-will-on{color:var(--accent);font-weight:500} .st-will-off{color:var(--accent);font-weight:500}
+
+/* ---------- action bar ---------- */
+.actions{border-top:1px solid var(--rule);background:var(--surface);padding:12px 22px;
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
+.actions .summary{font-size:13px;color:var(--ink-2);min-width:190px}
+.actions .summary b{color:var(--ink)}
+select,.setname{padding:7px 9px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);
+  color:var(--ink);font-family:var(--body);font-size:13px}
+.btn{border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:3px;
+  padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--body)}
+.btn:hover:not(:disabled){border-color:var(--accent-line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08)}
+.btn.go{border-color:var(--on);color:var(--on)}
+.spacer{margin-left:auto}
+:focus-visible{outline:2px solid var(--accent-line);outline-offset:1px}
+
+/* ---------- scan overlay ---------- */
+.scan{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:20}
+.scan.hide{display:none}
+.scanbox{width:min(420px,86vw);display:flex;flex-direction:column;gap:14px}
+.scanbox h2{font-family:var(--display);font-size:19px;margin:0;font-weight:600;letter-spacing:-.01em}
+.scanbox p{margin:0;color:var(--ink-2);font-size:13.5px}
+.bar{height:4px;background:var(--rule);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent-line);width:0;transition:width .25s}
+.scanbox .count{font-family:var(--mono);font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.empty{padding:60px 22px;text-align:center;color:var(--ink-3);font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <div>
+    <h1>Rocksmith Song Manager</h1>
+    <div class="sub" id="path">Y:\Rocksmith 2014 Edition - Remastered</div>
+  </div>
+  <div class="stats">
+    <div class="stat on"><span class="n" id="s-on">–</span><span class="l">enabled</span></div>
+    <div class="stat off"><span class="n" id="s-off">–</span><span class="l">disabled</span></div>
+    <div class="stat pending"><span class="n" id="s-pending">0</span><span class="l">pending</span></div>
+    <div class="stat"><span class="n" id="s-size">–</span><span class="l">gb on disk</span></div>
+    <button class="iconbtn" id="theme" title="Switch theme">theme</button>
+    <button class="iconbtn" id="rescan" title="Re-read every psarc from disk">rescan</button>
+  </div>
+</div>
+
+<div class="tools">
+  <div class="search">
+    <input id="q" type="search" placeholder="Search artist, title or album…" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="chips" id="f-source"><span class="lbl">source</span>
+    <button class="chip" data-v="all" aria-pressed="true">All</button>
+    <button class="chip" data-v="official" aria-pressed="false">Official</button>
+    <button class="chip" data-v="custom" aria-pressed="false">Custom</button>
+  </div>
+  <div class="chips" id="f-arr"><span class="lbl">part</span>
+    <button class="chip" data-v="any" aria-pressed="true">Any</button>
+    <button class="chip" data-v="Lead" aria-pressed="false">Lead</button>
+    <button class="chip" data-v="Rhythm" aria-pressed="false">Rhythm</button>
+    <button class="chip" data-v="Bass" aria-pressed="false">Bass</button>
+    <button class="chip" data-v="Vocals" aria-pressed="false">Vocals</button>
+  </div>
+  <div class="chips" id="f-state"><span class="lbl">state</span>
+    <button class="chip" data-v="all" aria-pressed="true">All</button>
+    <button class="chip" data-v="on" aria-pressed="false">On</button>
+    <button class="chip" data-v="off" aria-pressed="false">Off</button>
+  </div>
+  <div class="bulk">
+    <button id="b-on">Select shown</button>
+    <button id="b-off">Clear shown</button>
+    <button id="b-revert">Revert</button>
+  </div>
+</div>
+
+<div class="banner" id="banner"><span id="banner-text"></span></div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr>
+      <th class="nosort"></th>
+      <th data-k="artist">Artist<span class="dir"></span></th>
+      <th data-k="title">Song<span class="dir"></span></th>
+      <th data-k="album">Album<span class="dir"></span></th>
+      <th data-k="year">Year<span class="dir"></span></th>
+      <th data-k="length">Len<span class="dir"></span></th>
+      <th data-k="arrangements">Parts<span class="dir"></span></th>
+      <th data-k="tuning">Tuning<span class="dir"></span></th>
+      <th data-k="custom">Source<span class="dir"></span></th>
+      <th data-k="enabled">State<span class="dir"></span></th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="empty" id="empty" style="display:none">Nothing matches those filters.</div>
+</div>
+
+<div class="actions">
+  <div class="summary" id="summary">No changes staged.</div>
+  <select id="setlist"><option value="">Setlists…</option></select>
+  <input class="setname" id="setname" placeholder="Name this set" size="16">
+  <button class="btn" id="save-set">Save set</button>
+  <button class="btn" id="del-set">Delete</button>
+  <span class="spacer"></span>
+  <button class="btn primary" id="apply" disabled>Apply changes</button>
+  <button class="btn go" id="launch">Launch Rocksmith</button>
+  <button class="btn" id="quit">Quit manager</button>
+</div>
+
+<div class="scan" id="scan">
+  <div class="scanbox">
+    <h2>Reading your library</h2>
+    <p>Opening every package in <code>dlc\</code> and <code>dlc_disabled\</code> to pull artist, title and arrangements. Only the first run is slow — after that it reads from cache.</p>
+    <div class="bar"><i id="scanbar"></i></div>
+    <div class="count" id="scancount">starting…</div>
+  </div>
+</div>
+
+<script>
+const LETTER = {Lead:'L', Rhythm:'R', Combo:'C', Bass:'B', Vocals:'V'};
+let songs = [], disk = new Map(), want = new Map(), setlists = {};
+let sortKey = 'artist', sortDir = 1, gameRunning = false;
+const filters = {source:'all', arr:'any', state:'all', q:''};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mmss = s => s ? Math.floor(s/60) + ':' + String(Math.round(s%60)).padStart(2,'0') : '';
+
+/* ---------------- theme ---------------- */
+const savedTheme = localStorage.getItem('rsm-theme');
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+$('theme').onclick = () => {
+  const now = document.documentElement.dataset.theme;
+  const next = now === 'dark' ? 'light' : now === 'light' ? '' : 'dark';
+  if (next) { document.documentElement.dataset.theme = next; localStorage.setItem('rsm-theme', next); }
+  else { delete document.documentElement.dataset.theme; localStorage.removeItem('rsm-theme'); }
+};
+
+/* ---------------- data ---------------- */
+async function loadLibrary() {
+  const r = await fetch('/api/library').then(r => r.json());
+  if (r.scanning) {
+    $('scanbar').style.width = r.total ? (100 * r.done / r.total) + '%' : '0%';
+    $('scancount').textContent = r.total ? `${r.done} of ${r.total} packages` : 'starting…';
+    return setTimeout(loadLibrary, 400);
+  }
+  songs = r.songs;
+  disk = new Map(songs.map(s => [s.file, s.enabled]));
+  want = new Map(disk);
+  $('scan').classList.add('hide');
+  render();
+}
+
+async function loadSetlists() {
+  setlists = await fetch('/api/setlists').then(r => r.json());
+  const sel = $('setlist');
+  sel.innerHTML = '<option value="">Setlists…</option>' +
+    Object.keys(setlists).sort().map(n =>
+      `<option value="${esc(n)}">${esc(n)} · ${setlists[n].files.length}</option>`).join('');
+}
+
+/* ---------------- filtering ---------------- */
+function visible() {
+  const q = filters.q.toLowerCase().trim();
+  return songs.filter(s => {
+    if (filters.source === 'official' && s.custom) return false;
+    if (filters.source === 'custom' && !s.custom) return false;
+    if (filters.arr !== 'any' && !s.arrangements.includes(filters.arr)) return false;
+    const on = want.get(s.file);
+    if (filters.state === 'on' && !on) return false;
+    if (filters.state === 'off' && on) return false;
+    if (q && !(s.artist + ' ' + s.title + ' ' + s.album).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function sorted(list) {
+  const k = sortKey;
+  return list.slice().sort((a, b) => {
+    let x = a[k], y = b[k];
+    if (k === 'enabled') { x = want.get(a.file) ? 1 : 0; y = want.get(b.file) ? 1 : 0; }
+    if (k === 'arrangements') { x = a.arrangements.length; y = b.arrangements.length; }
+    if (k === 'custom') { x = a.custom ? 1 : 0; y = b.custom ? 1 : 0; }
+    if (typeof x === 'string' || typeof y === 'string') {
+      x = String(x ?? '').toLowerCase(); y = String(y ?? '').toLowerCase();
+      const c = x < y ? -1 : x > y ? 1 : 0;
+      return c * sortDir || a.title.localeCompare(b.title);
+    }
+    return ((x ?? 0) - (y ?? 0)) * sortDir || a.artist.localeCompare(b.artist);
+  });
+}
+
+/* ---------------- render ---------------- */
+function render() {
+  const list = sorted(visible());
+  const rows = list.map(s => {
+    const on = want.get(s.file), was = disk.get(s.file), chg = on !== was;
+    const badges = s.arrangements.map(a => LETTER[a]
+      ? `<span class="b ${LETTER[a]}" title="${esc(a)}">${LETTER[a]}</span>` : '').join('');
+    const state = chg ? (on ? '<span class="st-will-on">→ on</span>' : '<span class="st-will-off">→ off</span>')
+                      : (on ? '<span class="st-on">on</span>' : '<span class="st-off">off</span>');
+    const src = s.bundle ? `<span class="tag bundle">${s.bundleCount} pack</span>`
+              : s.custom ? '<span class="tag custom">custom</span>'
+                         : '<span class="tag official">official</span>';
+    return `<tr class="${on ? '' : 'off'} ${chg ? 'chg' : ''}" data-f="${esc(s.file)}">
+      <td class="pick"><input type="checkbox" ${on ? 'checked' : ''} aria-label="${esc(s.title)}"></td>
+      <td class="artist" title="${esc(s.artist)}">${esc(s.artist)}</td>
+      <td class="title" title="${esc(s.title)}${s.author ? ' — by ' + esc(s.author) : ''}">${esc(s.title)}</td>
+      <td class="album" title="${esc(s.album)}">${esc(s.album)}</td>
+      <td class="num">${s.year || ''}</td>
+      <td class="num">${mmss(s.length)}</td>
+      <td class="arr"><div class="badges">${badges}</div></td>
+      <td class="tuning" title="${esc(s.tuning)}">${esc(s.tuning)}</td>
+      <td class="src">${src}</td>
+      <td class="state">${state}</td>
+    </tr>`;
+  }).join('');
+
+  $('rows').innerHTML = rows;
+  $('empty').style.display = list.length ? 'none' : 'block';
+
+  document.querySelectorAll('thead th[data-k]').forEach(th => {
+    th.querySelector('.dir').textContent = th.dataset.k === sortKey ? (sortDir > 0 ? '↑' : '↓') : '';
+  });
+  updateStats(list.length);
+}
+
+function pending() {
+  const enable = [], disable = [];
+  for (const [file, on] of want) {
+    if (on !== disk.get(file)) (on ? enable : disable).push(file);
+  }
+  return {enable, disable};
+}
+
+function updateStats(shown) {
+  const on = [...want.values()].filter(Boolean).length;
+  const {enable, disable} = pending();
+  $('s-on').textContent = on.toLocaleString();
+  $('s-off').textContent = (want.size - on).toLocaleString();
+  $('s-pending').textContent = (enable.length + disable.length).toLocaleString();
+  const bytes = songs.reduce((t, s) => t + (want.get(s.file) ? (s.size || 0) : 0), 0);
+  $('s-size').textContent = (bytes / 1073741824).toFixed(1);
+
+  const n = enable.length + disable.length;
+  $('summary').innerHTML = n
+    ? `Staged: <b>${enable.length}</b> to enable, <b>${disable.length}</b> to disable. ` +
+      `Showing ${shown.toLocaleString()} of ${songs.length.toLocaleString()}.`
+    : `No changes staged. Showing <b>${shown.toLocaleString()}</b> of ${songs.length.toLocaleString()}.`;
+  $('apply').disabled = !n || gameRunning;
+
+  if (gameRunning) banner('stop', 'Rocksmith is running — close it before applying changes. The game holds these files open.');
+  else if (on > 1000) banner('warn', `${on.toLocaleString()} songs enabled. The game rescans every one at startup, so expect a long load. Turning some off is the fastest way to shorten it.`);
+  else banner(null);
+}
+
+let bannerSticky = 0;
+function banner(kind, text) {
+  const el = $('banner');
+  if (Date.now() < bannerSticky && kind !== 'stop') return;
+  if (!kind) { el.className = 'banner'; return; }
+  el.className = 'banner show ' + kind;
+  $('banner-text').textContent = text;
+}
+function flash(kind, text, ms = 6000) {
+  bannerSticky = Date.now() + ms;
+  const el = $('banner');
+  el.className = 'banner show ' + kind;
+  $('banner-text').textContent = text;
+}
+
+/* ---------------- events ---------------- */
+$('rows').addEventListener('change', e => {
+  const tr = e.target.closest('tr');
+  if (!tr) return;
+  want.set(tr.dataset.f, e.target.checked);
+  tr.classList.toggle('off', !e.target.checked);
+  tr.classList.toggle('chg', want.get(tr.dataset.f) !== disk.get(tr.dataset.f));
+  const chg = want.get(tr.dataset.f) !== disk.get(tr.dataset.f);
+  tr.querySelector('.state').innerHTML = chg
+    ? (e.target.checked ? '<span class="st-will-on">→ on</span>' : '<span class="st-will-off">→ off</span>')
+    : (e.target.checked ? '<span class="st-on">on</span>' : '<span class="st-off">off</span>');
+  updateStats(document.querySelectorAll('#rows tr').length);
+});
+
+let typing;
+$('q').addEventListener('input', e => {
+  clearTimeout(typing);
+  typing = setTimeout(() => { filters.q = e.target.value; render(); }, 140);
+});
+
+for (const [id, key] of [['f-source','source'], ['f-arr','arr'], ['f-state','state']]) {
+  $(id).addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    filters[key] = chip.dataset.v;
+    [...$(id).querySelectorAll('.chip')].forEach(c => c.setAttribute('aria-pressed', c === chip));
+    render();
+  });
+}
+
+document.querySelectorAll('thead th[data-k]').forEach(th => {
+  th.onclick = () => {
+    if (sortKey === th.dataset.k) sortDir *= -1; else { sortKey = th.dataset.k; sortDir = 1; }
+    render();
+  };
+});
+
+$('b-on').onclick = () => { visible().forEach(s => want.set(s.file, true)); render(); };
+$('b-off').onclick = () => { visible().forEach(s => want.set(s.file, false)); render(); };
+$('b-revert').onclick = () => { want = new Map(disk); render(); };
+
+$('apply').onclick = async () => {
+  const {enable, disable} = pending();
+  $('apply').disabled = true;
+  const r = await fetch('/api/apply', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({enable, disable})
+  }).then(r => r.json());
+  if (!r.ok && r.error) { flash('stop', r.error); $('apply').disabled = false; return; }
+  for (const f of enable) disk.set(f, true);
+  for (const f of disable) disk.set(f, false);
+  songs.forEach(s => s.enabled = disk.get(s.file));
+  const failed = (r.failures || []).length;
+  flash(failed ? 'warn' : 'ok',
+    `Moved ${r.moved.enabled} into dlc\\ and ${r.moved.disabled} out.` +
+    (failed ? ` ${failed} file(s) could not be moved — check the console window.` : ''));
+  render();
+};
+
+$('launch').onclick = async () => {
+  const {enable, disable} = pending();
+  if (enable.length + disable.length) {
+    flash('warn', 'You have unapplied changes — apply them first or the game will load the old set.');
+    return;
+  }
+  const r = await fetch('/api/launch', {method: 'POST'}).then(r => r.json());
+  flash(r.ok ? 'ok' : 'stop', r.ok ? 'Launching Rocksmith…' : (r.error || 'Launch failed'));
+};
+
+$('rescan').onclick = async () => {
+  $('scan').classList.remove('hide');
+  $('scanbar').style.width = '0%';
+  await fetch('/api/rescan', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({force: true})});
+  setTimeout(loadLibrary, 300);
+};
+
+$('quit').onclick = async () => {
+  await fetch('/api/quit', {method: 'POST'}).catch(() => {});
+  document.body.innerHTML = '<div class="empty">Manager stopped. You can close this tab.</div>';
+};
+
+$('save-set').onclick = async () => {
+  const name = $('setname').value.trim();
+  if (!name) { flash('warn', 'Give the set a name first.'); return; }
+  const files = songs.filter(s => want.get(s.file)).map(s => s.file);
+  await fetch('/api/setlists', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name, files})});
+  await loadSetlists();
+  $('setlist').value = name;
+  flash('ok', `Saved "${name}" with ${files.length} songs.`);
+};
+
+$('del-set').onclick = async () => {
+  const name = $('setlist').value;
+  if (!name) return;
+  await fetch('/api/setlists', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name, delete: true})});
+  await loadSetlists();
+  flash('ok', `Deleted "${name}".`);
+};
+
+$('setlist').onchange = e => {
+  const set = setlists[e.target.value];
+  if (!set) return;
+  const wanted = new Set(set.files);
+  songs.forEach(s => want.set(s.file, wanted.has(s.file)));
+  $('setname').value = e.target.value;
+  render();
+  flash('ok', `Loaded "${e.target.value}" — ${wanted.size} songs staged. Nothing has moved yet; hit Apply.`);
+};
+
+/* ---------------- heartbeat ---------------- */
+async function beat() {
+  try {
+    const r = await fetch('/api/status').then(r => r.json());
+    const was = gameRunning;
+    gameRunning = r.gameRunning;
+    if (was !== gameRunning) updateStats(document.querySelectorAll('#rows tr').length);
+  } catch (_) {}
+}
+setInterval(beat, 20000);
+beat();
+
+loadSetlists();
+loadLibrary();
+</script>
+</body>
+</html>
