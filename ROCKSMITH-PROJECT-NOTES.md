@@ -188,114 +188,84 @@ Profile key: the published one does NOT match this build's saves — decrypt fai
 
 ---
 
-## 6. OPEN WORK — kill the Uplay login prompt
+## 6. DONE — the 1.2.8.x port
 
-**Status:** the only thing left. Everything else works.
+**Status:** all four fixes ported, built, and committed. **Not yet run in-game.**
 
-Startup is now: launch → logos skipped → **Uplay prompt (must press Escape twice)** →
-profile `arps` auto-selected → main menu.
+Work lives in `C:\Users\arpan\rock_mod_arp` (git repo, branch `mod-update-1.2.8.x`).
+One commit per fix, reasoning in the commit messages. See that repo's `README.md`.
 
-**Why the existing mod doesn't clear it:** `ForceProfileLoad` works by spamming
-**Enter**. The Uplay dialog only closes on **Escape**.
+### Why porting, not upgrading
 
-**Upstream already fixed this.** RSMods `1.2.8.4` (Aug 2026), in
-`DLL/Mods/AutoLoadProfileMod.cpp`:
+1.2.8.x is a large refactor — the 73 KB `dllmain.cpp` monolith was split into
+`GameState` / `Keyboard` / `ModManager`, plus ~35 new files. Upstream cannot be
+merged wholesale, so each fix was cherry-picked into the 1.2.7.4 structure.
 
-```cpp
-// Skip the UPlay login dialog - depending on the menu it might need either
-// ESC or Enter, so spam both.
-if (GameState::currentMenu == "SelectionListDialog" ||
-    GameState::currentMenu == "UplayLoginDialog") {
-    Keyboard::SendEscapeKey();
-    Keyboard::AutoEnterGame();
-}
+The fork's offsets were confirmed to target the same exe as upstream's
+`RemasteredSeptember2022` slot — `ptr_disableTrueTuning` `0x004DCCF2`,
+`ptr_WindowNotInFocusValue` `0xEC5D46`, `ptr_sampleRateBuffer` `0x1251A9C`, all
+three identical on both sides. So upstream's Remastered addresses are valid here.
+
+### What was fixed
+
+| Fix | From | Effect |
+|---|---|---|
+| Uplay login dialog auto-dismissed | 1.2.8.x | No more pressing Escape twice at startup |
+| Alt-Tab white-screen semi-crash | 1.2.8.4 | Fixes the crash with "show current note" on |
+| Calibration above 100 FPS | 1.2.8.4 | Calibration completes without capping framerate |
+| `PreventMidSongPause` | 1.2.8.2 | Optional: tabbing away mid-song no longer pauses it |
+
+**Step 0 resolved.** The guess in the old plan was right: `dontAutoEnter` (in
+`DLL/D3D/D3DHelper.hpp`, not `D3DHooks.hpp`) contained **both** `"UplayLoginDialog"`
+and `"SelectionListDialog"`, so the auto-load block bailed out before running any
+logic on that screen. That guard was half the bug; the other half is that the block
+only ever sent **Enter**, and the dialog closes on **Escape**. Both are fixed.
+
+`Util::SendKey` in `MemHelpers.hpp` turned out to be byte-for-byte equivalent to
+upstream's `Keyboard::SendEscapeKey`, so no new helper was needed — as predicted.
+
+### Build — easier than expected
+
+**Visual Studio Community is not needed. Build Tools 2026 was already installed**
+with the C++ workload (MSVC 14.51, toolset v145) and Windows SDK 10.0.26100 with
+x86 libs. The project asks for v142; `scripts\build-dll.ps1` retargets to v145 on
+the command line rather than editing the vendored `.vcxproj`.
+
+```powershell
+scripts\build-dll.ps1     # Release|Win32 -> RSMods-src\Installer\Resources\xinput1_3.dll
+scripts\install-dll.ps1   # backs up the current DLL, then installs
+scripts\restore-dll.ps1   # instant rollback
 ```
 
-**The fix ships in a real release** — verified at tag `RSModsInstaller-v1.2.8.4_OnCommit`,
-in **`DLL/ModManager.cpp` line ~623** (not `Mods/AutoLoadProfileMod.cpp`; that file is a
-later dev-branch refactor). `Keyboard::SendEscapeKey()` exists there too. So this is a
-downloadable build, not an unreleased branch.
+Builds clean — no errors, only the 17 pre-existing warnings. Output verified as a
+32-bit PE32 DLL exporting the 7 XInput entry points. Output goes to
+`Installer\Resources\`, **not** `Release\`.
 
-**Why we can't just update:** the fork is dead — created and last pushed the same day,
-**21 Nov 2024**, single release `RSModsInstaller-v1.2.7.4-Cracked`, 15 stars. Upstream
-1.2.8.4 has the fix but carries the check this fork exists to remove, so it may not run
-on this install.
-*(Claude will help port the fix and set up the build; Claude will not work on the
-piracy-check removal itself, or source check-removed builds.)*
+### Verification still owed
 
-> **TRY THIS FIRST:** just run the official 1.2.8.4 installer and see whether it works.
-> The assumption that the check blocks it is untested — and that assumption was already
-> wrong once (the Custom Mods tab worked fine). Ten minutes of testing beats the guess,
-> and if it runs, everything below is unnecessary.
+Nothing here has been run in the game yet. In order:
 
-### What 1.2.8.x adds over 1.2.7.4
+1. Startup — does the Uplay prompt clear on its own?
+2. Alt-Tab out of a song with "show current note" on — no white screen?
+3. Calibration at the monitor's real refresh rate — does the meter fill?
+4. `PreventMidSongPause=on` in `RSMods.ini` — does the song keep playing?
 
-`1.2.8.0` (Jan 2025) — native support for **both** Remastered and Learn & Play.
-Note from the release: *"If your game .exe is around 11MB, you can also use 1.2.7.4."*
-**This exe is 11.1 MB**, so 1.2.7.4 is legitimately correct here — just old.
+`RSMods_debug.txt` will still say `1.2.7.4` (version string deliberately unchanged).
+It should now also show `(BUG PREVENTION) Fixed Calibration At High Framerates` — if
+it instead says the calibration fix was **skipped**, the hook site bytes did not
+match and that offset needs revisiting.
 
-- **1.2.8.2** — song accuracy display; configurable overlay font size; **disable pause on
-  Alt-Tab while in a song**; RR-over-100% no longer required for related mods
-- **1.2.8.3** — permanently remove fingerprints; GuitarSpeak tuning-menu fix
-- **1.2.8.4** — **calibration fix for 120+ Hz monitors**; **fixed Alt-Tab semi-crash when
-  "show current note" is enabled** (that mod is ON here); crash fix for missing `dlc`
-  folder; ASIO buffer cap 4096; setting sanitiser that names the bad INI line
-- Unlisted: the Uplay fix, plus the `GameState` / `Keyboard` / `ModManager` split out of
-  the 73 KB `dllmain.cpp`
+### The one thing not ported
 
-Three of these are directly wanted: the Uplay fix, the Alt-Tab crash fix, and 120 Hz
-calibration. **All practice features (looping, rewind, RR speed) already exist in
-1.2.7.4** — see §0. Nothing else compelling is being missed.
+`PreventMidSongPause` has **no GUI checkbox** — it is read straight from
+`RSMods.ini`. Adding one means editing the 480 KB generated `GUI/UI.Designer.cs`.
+`RSMods.exe` rewrites `RSMods.ini` when it saves, so it may drop the hand-added key;
+re-add it after using the GUI.
 
-### The port — where the code lives in 1.2.7.4
-
-Everything is in **`DLL/dllmain.cpp`** (73 KB monolith), not a `Mods/` file.
-
-- **line ~1251** — `AutoEnterGame()`, sends only `VK_RETURN` via `PostMessage`
-- **line ~1670** — the `ForceProfileEnabled` block
-- `DLL/MemHelpers.hpp` already has a generic sender:
-  `namespace Util { inline void SendKey(unsigned int key); }` — **no new function needed**
-
-### Plan
-
-**Step 0 — resolve the unknown first.** `dontAutoEnter` is used at line 1670 but declared
-in a header not yet read (probably `DLL/D3D/D3DHooks.hpp`). After cloning:
-
+```ini
+[Toggle Switches]
+PreventMidSongPause=on
 ```
-grep -rn dontAutoEnter DLL/
-```
-
-**If `UplayLoginDialog` is in that list, that alone is the bug** — the guard skips the
-dialog before any logic runs, and removing it may be the whole fix.
-
-**Step 1 — patch** `dllmain.cpp` inside the `ForceProfileEnabled` block:
-
-```cpp
-// The Uplay login dialog closes on Escape, not Enter.
-if (currentMenu == "UplayLoginDialog" || currentMenu == "SelectionListDialog") {
-    Util::SendKey(VK_ESCAPE);
-    AutoEnterGame();
-}
-else if (Settings::ReturnSettingValue("ProfileToLoad") != "" && currentMenu == "ProfileSelect") {
-    // ... existing profile-walking code unchanged
-```
-
-Menu name strings come from the *game*, not the mod, so upstream's are valid here.
-
-**Step 2 — build.** **Visual Studio Community 2022**, workload *"Desktop development with
-C++"*. Not VS Code — this is an MSVC `.sln` and VS Code means hand-wiring MSBuild for no
-benefit.
-
-- Open `RSMods.sln`, build the **DLL project only** (skip the C# GUI and Installer)
-- Config **Release | x86** — the game is 32-bit, an x64 build won't load
-- Dependencies vendored in `DLL/Lib/` (Detours, DirectX, JSON, ImGui) — no vcpkg/NuGet
-
-**Step 3 — install.** Output is `xinput1_3.dll`. Back up the current one, swap it in.
-
-**Step 4 — verify.** Does the prompt clear? (`RSMods_debug.txt` will still report 1.2.7.4
-unless the version string is bumped.)
-
-**Rollback:** keep the old `xinput1_3.dll`; swapping back is instant.
 
 ---
 
