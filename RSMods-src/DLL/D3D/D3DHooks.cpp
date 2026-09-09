@@ -156,10 +156,17 @@ HRESULT APIENTRY D3DHooks::Hook_Reset(IDirect3DDevice9* pDevice, D3DPRESENT_PARA
 	// Reset Device. Call original Reset.
 	HRESULT ResetReturn = oReset(pDevice, pPresentationParameters);
 
-	ImGui_ImplDX9_CreateDeviceObjects();
+	// Only recreate device objects once the device is actually back. If Reset failed
+	// (e.g. still D3DERR_DEVICELOST mid Alt+Tab out of exclusive fullscreen), the game
+	// retries Reset next frame; recreating them against a lost device leaves the font
+	// atlas and ImGUI textures pointing at dead D3DPOOL_DEFAULT memory.
+	// (Ported from RSMods 1.2.8.4.)
+	if (SUCCEEDED(ResetReturn)) {
+		ImGui_ImplDX9_CreateDeviceObjects();
 
-	if (MemHelpers::DX9FontEncapsulation)
-		MemHelpers::DX9FontEncapsulation->OnResetDevice();
+		if (MemHelpers::DX9FontEncapsulation)
+			MemHelpers::DX9FontEncapsulation->OnResetDevice();
+	}
 
 	return ResetReturn;
 }

@@ -554,6 +554,13 @@ HRESULT APIENTRY D3DHooks::Hook_EndScene(IDirect3DDevice9* pDevice) {
 	if (returnAddress > Offsets::baseEnd)
 		return hRet;
 
+	// Don't draw our overlay onto a lost / not-yet-reset device (e.g. mid Alt+Tab out of
+	// exclusive fullscreen). Drawing through an ID3DXFont whose glyph atlas is gone is what
+	// turns an Alt+Tab into the white-screen semi-crash when "show current note" is on.
+	// (Ported from RSMods 1.2.8.4.)
+	if (FAILED(pDevice->TestCooperativeLevel()))
+		return hRet;
+
 	// Has this been ran before (AKA run only once, at startup)
 	if (!ImGuiInit) {
 		ImGuiInit = true;

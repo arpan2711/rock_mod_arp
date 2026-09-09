@@ -36,8 +36,8 @@ Write-Host ""
 
 if ($LASTEXITCODE -ne 0) { throw "Build failed with exit code $LASTEXITCODE" }
 
-$dll = Join-Path $repo 'RSMods-src\Release\xinput1_3.dll'
-if (-not (Test-Path $dll)) { $dll = Join-Path $repo 'RSMods-src\DLL\Release\xinput1_3.dll' }
+# The project's post-build step copies the DLL here.
+$dll = Join-Path $repo 'RSMods-src\Installer\Resources\xinput1_3.dll'
 
 Write-Host ""
 if (Test-Path $dll) {
