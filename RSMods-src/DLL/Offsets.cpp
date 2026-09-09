@@ -22,6 +22,12 @@ namespace Offsets { // Addresses for pre-2021 patch are in the comments
 	// True Tuning
 	uintptr_t ptr_trueTuning = 0x00F5F57C; // 0x00F5C4FC
 	std::vector<unsigned int> ptr_trueTuningOffsets{ 0x10, 0x4, 0x135C };
+	// Calibration sample count clamp. The 10 stolen bytes here are the load + store pair
+	// 8b 54 24 10 89 93 88 07 00 00  (mov edx,[esp+0x10] / mov [ebx+0x788],edx).
+	uintptr_t ptr_calibrationSampleCountClamp = 0x005EA378;
+	// First byte after the 10 stolen ones (d9 6c 24 0e).
+	uintptr_t ptr_calibrationSampleCountClampJmpBck = 0x005EA382;
+
 	uintptr_t ptr_disableTrueTuning = 0x004DCCF2; // 0x0149c621
 	uintptr_t ptr_disableTrueTuning_jmpBck = 0x004DCCF8; // 0x0149c627
 	uintptr_t ptr_disableTrueTuning_forceTT = 0x004DCCC1; // 0x0149c5f0

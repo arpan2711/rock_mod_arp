@@ -17,6 +17,10 @@ namespace Offsets {
 	extern uintptr_t ptr_tuning;
 	extern std::vector<unsigned int> ptr_tuningOffsets;
 
+	// Calibration - clamp the volume-averaging sample count (high framerate fix)
+	extern uintptr_t ptr_calibrationSampleCountClamp;
+	extern uintptr_t ptr_calibrationSampleCountClampJmpBck;
+
 	// True Tuning
 	extern uintptr_t ptr_trueTuning;
 	extern std::vector<unsigned int> ptr_trueTuningOffsets;

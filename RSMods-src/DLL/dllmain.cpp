@@ -1328,6 +1328,7 @@ unsigned WINAPI MainThread() {
 	BugPrevention::AllowComplexPasswords();
 	BugPrevention::PreventAdvancedDisplayCrash();
 	BugPrevention::PreventPortAudioInDeviceCrash();
+	BugPrevention::FixCalibrationSampleCount();
 
 	if (Settings::ReturnSettingValue("FixBrokenTones") == "on")
 		BugPrevention::PreventStuckTone();

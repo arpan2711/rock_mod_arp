@@ -104,4 +104,58 @@ namespace BugPrevention {
 
 		_LOG("(BUG PREVENTION) Prevented Port Audio In Device Crash" << std::endl);
 	}
+
+	/// <summary>
+	/// The 10 bytes this hook steals, as they appear in an unmodified Rocksmith2014.exe.
+	/// mov edx, dword ptr [esp + 0x10]  /  mov dword ptr [ebx + 0x788], edx
+	/// </summary>
+	static const unsigned char calibrationSampleCountClampOriginal[10] = {
+		0x8B, 0x54, 0x24, 0x10, 0x89, 0x93, 0x88, 0x07, 0x00, 0x00
+	};
+
+	/// <summary>
+	/// Clamps the sample count to the buffer's real capacity before it is stored.
+	/// </summary>
+	void __declspec(naked) calibrationSampleCountClampHook() {
+		__asm {
+			mov edx, dword ptr [esp + 0x10]		// The code we are overwriting to place this hook
+			cmp edx, 100						// Capacity of the ring buffer, per player
+			jbe keepCalibrationSampleCount
+			mov edx, 100
+		keepCalibrationSampleCount:
+			mov dword ptr [ebx + 0x788], edx	// The code we are overwriting to place this hook
+
+			jmp Offsets::ptr_calibrationSampleCountClampJmpBck	// Return to the code we were running.
+		}
+	}
+
+	/// <summary>
+	/// The input calibration screen sizes its volume averaging buffer to the current framerate (1.0 / delta time),
+	/// but the buffer is a fixed 100 floats per player. Above ~100 FPS the sampler writes past the end of it, and
+	/// the mean is then taken over more floats than the array holds, reading neighbouring members as if they were
+	/// samples. The mean never settles in the acceptance window, so the meter never fills and calibration cannot
+	/// be completed - which is why players on high refresh rate displays have to cap their framerate first.
+	/// Clamping that count to the real capacity fixes both the writes and the reads. Nothing at or below 100 FPS
+	/// changes; above it the averaging window just covers less time.
+	///
+	/// Ported from RSMods 1.2.8.4. Upstream hooks blindly; this build verifies the 10 bytes it is about to steal
+	/// first, because the address cannot be checked ahead of time (Rocksmith2014.exe ships Steam-stub packed, so
+	/// .text has no raw data on disk and only exists once the stub has unpacked it into memory).
+	/// </summary>
+	void FixCalibrationSampleCount() {
+		_LOG_INIT;
+
+		if (memcmp((void*)Offsets::ptr_calibrationSampleCountClamp, calibrationSampleCountClampOriginal, sizeof(calibrationSampleCountClampOriginal)) != 0) {
+			_LOG_SETLEVEL(LogLevel::Error);
+			_LOG("(BUG PREVENTION) Calibration fix SKIPPED - unexpected bytes at the hook site. Wrong game build?" << std::endl);
+			_LOG_SETLEVEL(LogSettings::defaultLogLevel);
+			return;
+		}
+
+		MemUtil::PlaceHook((void*)Offsets::ptr_calibrationSampleCountClamp, calibrationSampleCountClampHook, 10);
+
+		FlushInstructionCache(GetCurrentProcess(), (void*)Offsets::ptr_calibrationSampleCountClamp, 10);
+
+		_LOG("(BUG PREVENTION) Fixed Calibration At High Framerates" << std::endl);
+	}
 }
