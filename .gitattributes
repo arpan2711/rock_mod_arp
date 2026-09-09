@@ -1,0 +1,6 @@
+# Repo is uniformly CRLF (MSVC sources); keep it that way on every platform.
+* text=auto eol=crlf
+*.png binary
+*.dll binary
+*.exe binary
+*.bz2 binary

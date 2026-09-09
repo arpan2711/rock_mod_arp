@@ -1668,8 +1668,15 @@ unsigned WINAPI MainThread() {
 				
 			// Auto Load Profile. AKA "Fork in the toaster".
 			if (Settings::ReturnSettingValue("ForceProfileEnabled") == "on" && !(MemHelpers::Contains(currentMenu, dontAutoEnter)) && !forkInToasterNewProfile) {
+				// Skip the UPlay login dialog. Depending on the menu it needs either ESC or
+				// Enter, so spam both. ForceProfileLoad on its own only sends Enter, which
+				// this dialog ignores. (Ported from RSMods 1.2.8.x.)
+				if (currentMenu == (std::string)"UplayLoginDialog" || currentMenu == (std::string)"SelectionListDialog") {
+					Util::SendKey(VK_ESCAPE);
+					AutoEnterGame();
+				}
 				// If the user user says "I want to always load this profile"
-				if (Settings::ReturnSettingValue("ProfileToLoad") != "" && currentMenu == (std::string)"ProfileSelect") {
+				else if (Settings::ReturnSettingValue("ProfileToLoad") != "" && currentMenu == (std::string)"ProfileSelect") {
 					selectedUser = MemHelpers::CurrentSelectedUser();
 					if (selectedUser == Settings::ReturnSettingValue("ProfileToLoad")) // The profile we're looking for
 						AutoEnterGame();
