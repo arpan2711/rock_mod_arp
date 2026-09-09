@@ -31,3 +31,6 @@ __pycache__/
 # ---- Game binaries: these live in the game folder, not here ----
 xinput1_3.dll
 D3DX9_42.dll
+
+# ---- DLL backups made by scripts/install-dll.ps1 ----
+backups/
