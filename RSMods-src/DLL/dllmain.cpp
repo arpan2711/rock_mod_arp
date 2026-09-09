@@ -146,6 +146,24 @@ unsigned WINAPI RiffRepeaterThread() {
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 	_LOG_INIT;
 
+	// Alt+Tabbing mid-song normally pauses it. Lie to the game about focus so it keeps playing.
+	// (Ported from RSMods 1.2.8.2.)
+	//
+	// D3DHooks::currentMenu is the cached menu the mod thread maintains. WndProc runs on the
+	// window message thread, so calling MemHelpers::IsInSong() here would walk the game's
+	// pointer chains off-thread; the cached string is what the onlineModes check below already
+	// uses for the same reason.
+	if (Settings::ReturnSettingValue("PreventMidSongPause") == "on" && MemHelpers::Contains(D3DHooks::currentMenu, songModes)) {
+		switch (msg) {
+			case WM_NCACTIVATE:
+			case WM_ACTIVATEAPP:
+			case WM_ACTIVATE:
+				return CallWindowProc(D3DHooks::oWndProc, hWnd, msg, TRUE, lParam); // Always report "activated".
+			case WM_KILLFOCUS:
+				return false; // Swallow it entirely.
+		}
+	}
+
 	// Makes ALT + ENTER cause F11 to be pressed.
 	// This is mainly so a user can use a common shortcut, that works in most games now-a-days.
 	if (msg == WM_SYSCOMMAND && keyPressed == SC_KEYMENU) {
