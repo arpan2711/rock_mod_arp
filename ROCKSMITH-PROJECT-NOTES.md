@@ -190,7 +190,7 @@ Profile key: the published one does NOT match this build's saves — decrypt fai
 
 ## 6. DONE — the 1.2.8.x port
 
-**Status:** all four fixes ported, built, and committed. **Not yet run in-game.**
+**Status:** all four fixes ported, built, committed, and **installed (9 Sep 2026)**. Smoke test passed — DLL loads, calibration hook applied. **Full testing pending.** Rollback, hashes, and the test checklist are in that repo's `README.md`.
 
 Work lives in `C:\Users\arpan\rock_mod_arp` (git repo, branch `mod-update-1.2.8.x`).
 One commit per fix, reasoning in the commit messages. See that repo's `README.md`.
