@@ -160,6 +160,11 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 			case WM_ACTIVATE:
 				return CallWindowProc(D3DHooks::oWndProc, hWnd, msg, TRUE, lParam); // Always report "activated".
 			case WM_KILLFOCUS:
+				// Upstream hands every message to ImGui before this block. This build only does
+				// that at the bottom of WndProc, which we are about to skip, and ImGui 1.85 uses
+				// WM_KILLFOCUS to clear its key-down state - so let it see the message first.
+				if (D3DHooks::menuEnabled)
+					ImGui_ImplWin32_WndProcHandler(hWnd, msg, keyPressed, lParam);
 				return false; // Swallow it entirely.
 		}
 	}
