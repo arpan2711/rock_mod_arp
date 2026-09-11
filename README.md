@@ -94,6 +94,8 @@ Do these in order. Tick them off here as they pass.
       note onset *(11 Sep)*
 - [x] **RS_ASIO at 256 samples** — no click, but latency noticeable; back to 128 after
       recalibrating fixed the click *(11 Sep)*
+- [ ] **64 samples + `LatencyBuffer=2`** — a full song with no crackle or dropouts;
+      `RS_ASIO-log.txt` says `actual buffer duration: 1ms (64 frames)`
 - [x] **Calibration** at the monitor's real refresh rate — done 11 Sep from the in-song tuner
       screen, meter filled and completed
 - [x] **Accuracy overlay** — a percentage appears under the song timer (top right) once
@@ -269,9 +271,15 @@ Driver=NUX Audio          ; guitar in over the NUX ASIO driver, channel 0
 ```
 
 **Buffer:** the NUX driver's default is 512 samples (10.7 ms, 12 ms reported) — the game
-asks for 144. `BufferSizeMode=custom` / `CustomBufferSize=128` (2.7 ms) is set; the driver
-reports `min: 8 max: 2048`, powers of two. Nothing else in the chain is slower than this
-(WASAPI output is 3 ms).
+asks for 144. `BufferSizeMode=custom` / `CustomBufferSize=64` (1.3 ms) is set; the driver
+reports `min: 8 max: 2048`, powers of two. 128 was clean after calibration, so 64 is the
+next try (11 Sep, untested). WASAPI output is 3 ms.
+
+**`Rocksmith.ini` `LatencyBuffer`** is the game's own internal input buffering, in audio
+periods. Shipped at 4, set to **2** on 11 Sep alongside the 64-sample ASIO buffer (untested).
+Fallback order if the guitar crackles or drops out: `LatencyBuffer` 2 -> 3 first, then
+`CustomBufferSize` 64 -> 128. Both are read at launch. If a spike appears only at note
+onset, that is calibration, not either buffer - see the note below.
 
 **Note-onset click (11 Sep):** at 128 every note started with a spike. 256 removed it but
 the extra latency was noticeable, so the real fix was **re-running the in-game
