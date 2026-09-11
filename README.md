@@ -90,11 +90,13 @@ Do these in order. Tick them off here as they pass.
       `NUX Audio` as the input driver; notes register with the webcam still set as the
       Windows default input; the `\` toggle still behaves *(11 Sep — at the driver's
       default 512-sample buffer)*
-- [ ] **RS_ASIO at 128 samples** — `CustomBufferSize=128`: no crackle or dropouts through
-      a full song; `RS_ASIO-log.txt` says `actual buffer duration: 2ms (128 frames)`
-- [ ] **Accuracy overlay** — a percentage appears under the song timer (top right) once
+- [x] **RS_ASIO at 128 samples** — ran, log confirmed `2ms (128 frames)`, but clicks at
+      note onset *(11 Sep)*
+- [ ] **RS_ASIO at 256 samples** — `CustomBufferSize=256`: no click at note onset through
+      a full song
+- [x] **Accuracy overlay** — a percentage appears under the song timer (top right) once
       the song starts, moves as you hit and miss, and matches the number on the
-      song-review screen at the end. Check Score Attack too.
+      song-review screen at the end. Check Score Attack too. *(11 Sep — Learn A Song confirmed)*
 - [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -265,9 +267,13 @@ Driver=NUX Audio          ; guitar in over the NUX ASIO driver, channel 0
 ```
 
 **Buffer:** the NUX driver's default is 512 samples (10.7 ms, 12 ms reported) — the game
-asks for 144. `BufferSizeMode=custom` / `CustomBufferSize=128` (2.7 ms) is set; the driver
-reports `min: 8 max: 2048`, powers of two. If it crackles go to 256; if it is clean, 64 is
-worth a try. Nothing else in the chain is slower than this now (WASAPI output is 3 ms).
+asks for 144. `BufferSizeMode=custom` / `CustomBufferSize=256` (5.3 ms) is set; the driver
+reports `min: 8 max: 2048`, powers of two. 128 ran (log confirmed 2 ms / 128 frames) but
+put a click at the start of every note - one late buffer while pitch detection spins up -
+so it went back up a notch. Nothing else in the chain is slower than this (WASAPI output
+is 3 ms). If a note-onset click survives at 256 the buffer is not the cause: re-run the
+in-game calibration, since the ASIO path hands the game a different input level than the
+WASAPI path it was calibrated on.
 
 Output stays where it was so the amp-source toggle above means the same thing it did
 before. The alternative ("option B") is `Asio.Output Driver=NUX Audio` and
