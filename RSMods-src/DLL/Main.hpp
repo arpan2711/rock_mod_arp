@@ -55,6 +55,9 @@ bool displayCurrentVolume = false;
 auto displayVolumeStartTime = std::chrono::steady_clock::time_point(); // Defaults to epoch time
 unsigned int currentVolumeIndex = 0; // Mixer volume to change. 0 - Master, 1 - Song, 2 - P1, 3 - P2, 4 - Mic, 5 - VO, 6 - SFX
 
+// Amp source mod. Toggles the game's virtual amp (Mixer_Player1) so you can drop to your pedalboard's own tone and back.
+auto ampSourceSwitchedAt = std::chrono::steady_clock::time_point(); // Defaults to epoch time
+
 // Looping functionality.
 inline float loopStart = NULL; // The start of the loop, as specified by the user.
 inline float roughLoopStart = NULL; // Just like loopStart, except we account for the lead-in time.

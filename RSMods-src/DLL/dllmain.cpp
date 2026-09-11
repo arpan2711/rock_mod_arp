@@ -355,6 +355,20 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 				currentVolumeIndex = 3;
 			}
 
+			// Amp Source mod. Flip between hearing the game's virtual amp and hearing only your own pedalboard.
+			// Muting Mixer_Player1 leaves the backing track (Mixer_Music) alone, so the song keeps playing either way.
+			else if (keyPressed == Settings::GetKeyBind("ToggleAmpSourceKey"))
+			{
+				if (VolumeControl::player1Muted)
+					VolumeControl::UnmutePlayer();
+				else
+					VolumeControl::MutePlayer();
+
+				ampSourceSwitchedAt = std::chrono::steady_clock::now();
+
+				_LOG("Triggered Mod: Amp Source is now " << (VolumeControl::player1Muted ? "PEDAL ONLY" : "GAME AMP") << std::endl);
+			}
+
 			// Hide the mixer if it is not actively being pressed
 			else if (keyPressed == Settings::GetKeyBind("DisplayMixerKey")) {
 				displayMixer = false;
@@ -877,6 +891,25 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 					static_cast<int>(WindowSize.width / 19.2f),  // 120 pixels from left
 					static_cast<int>(WindowSize.height / 16.0f), // 120 pixels from top
 					pDevice);
+		}
+
+		// Show Amp Source mod.
+		// "PEDAL ONLY" stays up for as long as the game's amp is muted, so you can never be unsure which tone you are hearing.
+		// "GAME AMP" is only a three second confirmation, because that is the normal state and a permanent label would just be clutter.
+		{
+			const bool pedalOnly = VolumeControl::player1Muted;
+			const bool confirming = (std::chrono::steady_clock::now() - ampSourceSwitchedAt) < std::chrono::seconds(3);
+
+			if (pedalOnly || confirming) {
+				MemHelpers::DX9DrawText(
+						pedalOnly ? "PEDAL ONLY" : "GAME AMP",
+						whiteText,
+						static_cast<int>(WindowSize.width / 96.0f),  // 20 pixels from left in 1920x1080 resolution
+						static_cast<int>(WindowSize.height / 27.0f), // 40 pixels from top, one line below the volume overlay so the two never collide
+						static_cast<int>(WindowSize.width / 9.6f),   // 200 pixels from left
+						static_cast<int>(WindowSize.height / 13.5f), // 80 pixels from top
+						pDevice);
+			}
 		}
 
 		// Show Song Timer mod.

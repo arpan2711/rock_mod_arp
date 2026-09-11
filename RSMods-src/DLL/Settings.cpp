@@ -34,6 +34,7 @@ void Settings::Initialize()
 		{"DisplayMixerKey", "P"},
 		{"MutePlayer1Key", "X"},
 		{"MutePlayer2Key", "C"},
+		{"ToggleAmpSourceKey", "VK_OEM_5"},
 
 		{"ForceReEnumerationEnabled", "automatic"},
 
@@ -198,7 +199,8 @@ void Settings::ReadKeyBinds() {
 			{ "SFXVolumeKey", reader.GetValue("Audio Keybindings", "SFXVolumeKey", "S") },
 			{ "DisplayMixerKey", reader.GetValue("Audio Keybindings", "DisplayMixerKey", "P") },
 			{ "MutePlayer1Key", reader.GetValue("Audio Keybindings", "MutePlayer1Key", "X")},
-			{ "MutePlayer2Key", reader.GetValue("Audio Keybindings", "MutePlayer2Key", "C")}
+			{ "MutePlayer2Key", reader.GetValue("Audio Keybindings", "MutePlayer2Key", "C")},
+			{ "ToggleAmpSourceKey", reader.GetValue("Audio Keybindings", "ToggleAmpSourceKey", "VK_OEM_5")}
 	};
 	// _LOG("Read " << modSettings["ToggleLoftKey"] << std::endl);
 }

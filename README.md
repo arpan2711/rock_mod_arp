@@ -10,12 +10,12 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 ## STATUS — 9 Sep 2026
 
-**Installed right now:** the patched DLL built from commit `c0817e0`
+**Installed right now:** the patched DLL built from the amp-source-toggle commit
 (branch `mod-update-1.2.8.x`).
 
 | File | SHA-256 | What it is |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | `7846d005 28282b1a bfbd2c7d 390d80e9 092fb6e0 af144032 ca391145 10d8b806` | **patched build, currently installed** |
+| `Y:\...\xinput1_3.dll` | `f5a2abd2 4a9e1b55 e6d03ed4 4ab34f17 5df16c19 0bb9f80e 925adf5d a799c0a1` | **patched build, currently installed** |
 | `backups\xinput1_3.dll.1.2.7.4-original` | `fc7c44e1 35a6717f a6f44f7d abc1d960 f86a931c 7cebef92 4af5dbde 4ed6976f` | **the original — rollback target** |
 | `backups\xinput1_3.dll.20260909-134102` | same as original | timestamped copy of the same file |
 
@@ -79,6 +79,9 @@ Do these in order. Tick them off here as they pass.
 - [ ] **`PreventMidSongPause`** — add `PreventMidSongPause=on` under `[Toggle Switches]`
       in `RSMods.ini`, start a song, Alt-Tab: song keeps playing. *(Optional; off by
       default, so this is only tested if you want the feature.)*
+- [ ] **Amp source toggle** — press `\` mid-song: the game's guitar tone drops out,
+      backing track keeps playing, `PEDAL ONLY` shows top-left. Press again to
+      bring the virtual amp back.
 - [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -179,6 +182,43 @@ PreventMidSongPause=on
 Default `off` (stock behaviour). No GUI checkbox — adding one means editing the 480 KB
 generated `GUI/UI.Designer.cs`. **`RSMods.exe` rewrites `RSMods.ini` when it saves, so
 it may drop this hand-added key; re-add it after using the GUI.**
+
+---
+
+## Amp source toggle — the `\` key
+
+One key flips between hearing Rocksmith's virtual amp and hearing only your own
+pedalboard. Default bind is `\` (`VK_OEM_5`), which sits next to the loop keys
+`[` `]` so it is reachable without looking.
+
+```ini
+[Audio Keybindings]
+ToggleAmpSourceKey = VK_OEM_5
+```
+
+**What it does:** mutes and unmutes the Wwise RTPC `Mixer_Player1` — the game's
+processed guitar tone. `Mixer_Music` is untouched, so the backing track keeps playing
+in both modes. Works in menus and mid-song, and is *not* gated behind
+`VolumeControl=on`.
+
+**On screen:** `PEDAL ONLY` stays in the top-left for as long as the game amp is
+muted; `GAME AMP` flashes for three seconds when you switch back. It draws one line
+below the volume overlay so the two never collide.
+
+**The rig this is for:** guitar → NUX MG-300 MK2 → amp (that is the "pedalboard"
+sound in the room), and MG-300 → USB → PC → desk speakers (that is where Rocksmith's
+audio comes out).
+
+| Mode | Desk speakers | Your amp |
+|---|---|---|
+| `GAME AMP` | backing track **+ Rocksmith's virtual amp** | still making noise |
+| `PEDAL ONLY` | backing track only | your actual tone |
+
+**Known limit:** the PC cannot silence your physical amp, so in `GAME AMP` mode you
+hear both unless you turn the amp (or the MG-300's master) down yourself. If the
+MG-300 MK2 accepts MIDI CC over USB, the mod could send it a mute or bypass on the
+same key — RSMods already has MIDI-out plumbing for tuning pedals (`Mods/Midi.cpp`).
+Not attempted yet; the pedal's MIDI support has not been confirmed.
 
 ---
 
