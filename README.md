@@ -78,8 +78,8 @@ Do these in order. Tick them off here as they pass.
 - [ ] **Uplay prompt** clears on its own at startup, lands on profile `arps` at the main menu
 - [ ] **Alt-Tab out of a song** with "show current note" on — no white screen, game
       recovers when you tab back
-- [ ] **Calibration** at the monitor's real refresh rate (no FPS cap) — the meter fills
-      and calibration completes
+- [x] **Calibration** at the monitor's real refresh rate (no FPS cap) — the meter fills
+      and calibration completes *(11 Sep)*
 - [ ] **`PreventMidSongPause`** — add `PreventMidSongPause=on` under `[Toggle Switches]`
       in `RSMods.ini`, start a song, Alt-Tab: song keeps playing. *(Optional; off by
       default, so this is only tested if you want the feature.)*
@@ -92,8 +92,10 @@ Do these in order. Tick them off here as they pass.
       default 512-sample buffer)*
 - [x] **RS_ASIO at 128 samples** — ran, log confirmed `2ms (128 frames)`, but clicks at
       note onset *(11 Sep)*
-- [ ] **RS_ASIO at 256 samples** — `CustomBufferSize=256`: no click at note onset through
-      a full song
+- [x] **RS_ASIO at 256 samples** — no click, but latency noticeable; back to 128 after
+      recalibrating fixed the click *(11 Sep)*
+- [x] **Calibration** at the monitor's real refresh rate — done 11 Sep from the in-song tuner
+      screen, meter filled and completed
 - [x] **Accuracy overlay** — a percentage appears under the song timer (top right) once
       the song starts, moves as you hit and miss, and matches the number on the
       song-review screen at the end. Check Score Attack too. *(11 Sep — Learn A Song confirmed)*
@@ -267,13 +269,17 @@ Driver=NUX Audio          ; guitar in over the NUX ASIO driver, channel 0
 ```
 
 **Buffer:** the NUX driver's default is 512 samples (10.7 ms, 12 ms reported) — the game
-asks for 144. `BufferSizeMode=custom` / `CustomBufferSize=256` (5.3 ms) is set; the driver
-reports `min: 8 max: 2048`, powers of two. 128 ran (log confirmed 2 ms / 128 frames) but
-put a click at the start of every note - one late buffer while pitch detection spins up -
-so it went back up a notch. Nothing else in the chain is slower than this (WASAPI output
-is 3 ms). If a note-onset click survives at 256 the buffer is not the cause: re-run the
-in-game calibration, since the ASIO path hands the game a different input level than the
-WASAPI path it was calibrated on.
+asks for 144. `BufferSizeMode=custom` / `CustomBufferSize=128` (2.7 ms) is set; the driver
+reports `min: 8 max: 2048`, powers of two. Nothing else in the chain is slower than this
+(WASAPI output is 3 ms).
+
+**Note-onset click (11 Sep):** at 128 every note started with a spike. 256 removed it but
+the extra latency was noticeable, so the real fix was **re-running the in-game
+calibration** - the ASIO path hands the game a different input level than the WASAPI
+path it was calibrated on, so the noise gate was snapping open on every attack. Calibrate
+from the tuner screen that appears on the way into a song (lower-right, Enter), on the
+NUX preset you actually play with. If a click ever comes back at 128, calibrate again
+before touching the buffer.
 
 Output stays where it was so the amp-source toggle above means the same thing it did
 before. The alternative ("option B") is `Asio.Output Driver=NUX Audio` and
