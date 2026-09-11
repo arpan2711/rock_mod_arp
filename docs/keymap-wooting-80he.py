@@ -38,32 +38,35 @@ GROUPS = {
 # ---- shortcuts (what gets painted on the keys) ---------------------------------------
 # key label -> (group, primary text, ctrl text)
 SHORTCUTS = {
-    '-':     ('rewind', 'Rewind\n5 s', None),
-    '[':     ('loop',   'Loop\nstart', 'Ctrl: clear'),
-    ']':     ('loop',   'Loop\nend',   'Ctrl: clear'),
-    '=':     ('speed',  'Speed\n+2%',  'Ctrl: -2%'),
-    '\\':    ('amp',    'Game amp /\npedal only', None),
-    'A':     ('mod',    None,         'Ctrl:\nreload ini'),
-    'Ctrl':  ('mod',    'hold for\nalt. action', None),
-    'Esc':   ('game',   'Pause', None),
-    'Enter': ('game',   'Tuner screen:\nCalibrate', None),
+    '-':         ('speed',  'Speed\n-2%', None),
+    '=':         ('speed',  'Speed\n+2%', None),
+    'Backspace': ('rewind', 'Rewind 5 s', None),
+    '[':         ('loop',   'Loop\nstart', None),
+    ']':         ('loop',   'Loop\nend', None),
+    '\\':        ('loop',   'Clear loop', None),
+    "'":         ('amp',    'Game amp /\npedal only', None),
+    'A':         ('mod',    None,         'Ctrl:\nreload ini'),
+    'Esc':       ('game',   'Pause', None),
+    'Enter':     ('game',   'Tuner screen:\nCalibrate', None),
 }
 
 # ---- Wooting 80HE ANSI layout: rows of (label, width_u, x_offset_u_before) ------------
-# Nav column is drawn from product photos; none of the shortcuts live there.
+# 84 keys. The TKL nav cluster is condensed to a 2x3 block: PrtSc / Pause on the F-row,
+# Insert / Home and Delete / End under them. There are NO PgUp / PgDn keys (Fn layer).
+# Arrows sit in the usual spot but pulled in under a 1.75u right Shift.
 ROWS = [
     [('Esc',1,0),('F1',1,1),('F2',1,0),('F3',1,0),('F4',1,0),('F5',1,.5),('F6',1,0),('F7',1,0),('F8',1,0),
-     ('F9',1,.5),('F10',1,0),('F11',1,0),('F12',1,0),('Delete',1,.25)],
+     ('F9',1,.5),('F10',1,0),('F11',1,0),('F12',1,0),('PrtSc',1,.25),('Pause',1,0)],
     [('`',1,0),('1',1,0),('2',1,0),('3',1,0),('4',1,0),('5',1,0),('6',1,0),('7',1,0),('8',1,0),('9',1,0),('0',1,0),
-     ('-',1,0),('=',1,0),('Backspace',2,0),('Home',1,.25)],
+     ('-',1,0),('=',1,0),('Backspace',2,0),('Insert',1,.25),('Home',1,0)],
     [('Tab',1.5,0),('Q',1,0),('W',1,0),('E',1,0),('R',1,0),('T',1,0),('Y',1,0),('U',1,0),('I',1,0),('O',1,0),('P',1,0),
-     ('[',1,0),(']',1,0),('\\',1.5,0),('PgUp',1,.25)],
+     ('[',1,0),(']',1,0),('\\',1.5,0),('Delete',1,.25),('End',1,0)],
     [('Caps',1.75,0),('A',1,0),('S',1,0),('D',1,0),('F',1,0),('G',1,0),('H',1,0),('J',1,0),('K',1,0),('L',1,0),(';',1,0),
-     ("'",1,0),('Enter',2.25,0),('PgDn',1,.25)],
+     ("'",1,0),('Enter',2.25,0)],
     [('Shift',2.25,0),('Z',1,0),('X',1,0),('C',1,0),('V',1,0),('B',1,0),('N',1,0),('M',1,0),(',',1,0),('.',1,0),('/',1,0),
-     ('Shift',1.75,0),('\u2191',1,0),('End',1,0)],
-    [('Ctrl',1.25,0),('Win',1.25,0),('Alt',1.25,0),('',6.25,0),('Alt',1,0),('Fn',1,0),('Ctrl',1,0),
-     ('\u2190',1,0),('\u2193',1,0),('\u2192',1,0)],
+     ('Shift',1.75,0),('\u2191',1,1.25)],
+    [('Ctrl',1.25,0),('Win',1.25,0),('Alt',1.25,0),('',6.25,0),('Alt',1.25,0),('Fn',1.25,0),('Ctrl',1.25,0),
+     ('\u2190',1,.5),('\u2193',1,0),('\u2192',1,0)],
 ]
 
 def font(size, bold=False):
@@ -81,7 +84,7 @@ F_SHORT = font(13, True)
 F_LEG   = font(16)
 F_NOTE  = font(14)
 
-board_w = 16.25 * U
+board_w = 17.25 * U
 board_h = (6 + FROW_GAP) * U
 W = int(X0 * 2 + board_w)
 H = int(Y0 + board_h + 250)
@@ -90,7 +93,7 @@ d = ImageDraw.Draw(img)
 
 # title
 d.text((X0, 36), 'Rocksmith practice keys \u2014 Wooting 80HE', font=F_TITLE, fill=TEXT)
-d.text((X0, 84), 'RSMods keybinds from RSMods.ini. Everything works live inside a song; Ctrl gives the alternate action.',
+d.text((X0, 84), 'RSMods keybinds from RSMods.ini. Everything works live inside a song, one key each, no Ctrl.',
        font=F_SUB, fill=TEXT_DIM)
 
 # case
@@ -138,13 +141,13 @@ for name in ('loop', 'speed', 'rewind', 'amp', 'mod', 'game'):
 nx = X0 + 420
 ny = Y0 + board_h + 50
 notes = [
-    'Workflow:  [ and ] around a few bars  ->  Ctrl+= to slow it down  ->  work it  ->  = past 100%',
-    'so real tempo feels easy afterwards.',
+    'Workflow:  [ and ] around a few bars  ->  tap - to slow it down  ->  work it  ->  tap = past 100%',
+    'so real tempo feels easy afterwards  ->  \\ clears the loop.',
     'Loop and speed keys work in Learn A Song, Non-Stop Play and Riff Repeater; Rewind only while a song is playing.',
     'Tunables in RSMods.ini:  RewindBy = 5000 ms,  RRSpeedInterval = 2 %,  LoopingLeadUp = 2000 ms run-in before the loop.',
-    '\\  mutes the game\'s guitar tone only - the backing track keeps playing. "PEDAL ONLY" shows top-left while muted.',
+    '\'  mutes the game\'s guitar tone only - the backing track keeps playing. "PEDAL ONLY" shows top-left while muted.',
     'Top-right overlay while playing:  song timer  /  accuracy %  /  "12 in a row, best 37" streak.',
-    'Nav column (Delete, Home, PgUp, PgDn, End) is drawn from product photos; no shortcut lives there.',
+    'Ctrl + [ or ] still clears the loop and Ctrl + = still slows down, for muscle memory. Nothing lives on the nav block.',
 ]
 for t in notes:
     d.text((nx, ny), t, font=F_NOTE, fill=TEXT_DIM)

@@ -14,10 +14,10 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 | Thing | State | Since |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | streak-overlay build, SHA-256 `ac288994 b0fcacd9 674c494f 575c2678 b453a555 c3b9715b e83be6cc 6b825e4e` | 11 Sep 23:16 |
+| `Y:\...\xinput1_3.dll` | no-Ctrl keys build, SHA-256 `2c2a5aa4 008380b6 37a08fc2 5f3939cb da13c6b5 7193c0ce cfd007f2 48b57d69` | 12 Sep |
 | RS_ASIO v0.7.5 | `avrt.dll` + `RS_ASIO.dll` + `RS_ASIO.ini` in the game folder; input `NUX Audio` ch 0, output WASAPI, **64-sample buffer** | 11 Sep |
 | `Rocksmith.ini` | `LatencyBuffer=2` (was 4); everything else as before | 11 Sep |
-| `RSMods.ini` | `ToggleAmpSourceKey = VK_OEM_5`, `DisplayCurrentAccuracy = on`, `DisplayNoteStreak = on` added; nothing removed | 11 Sep |
+| `RSMods.ini` | keys re-mapped to one cluster, no Ctrl: `RRSpeedDownKey`, `LoopClearKey` added, `RewindKey = VK_BACK`, `ToggleAmpSourceKey = VK_OEM_7`; plus `DisplayCurrentAccuracy = on`, `DisplayNoteStreak = on`; nothing removed | 12 Sep |
 | In-game calibration | redone on the ASIO input path, on the usual NUX preset | 11 Sep |
 | Windows default input | still the webcam — **irrelevant now**, RS_ASIO binds the NUX by name | — |
 
@@ -49,7 +49,7 @@ open); the ini files can be edited any time and are read at launch.
 | crackle / dropouts / stutter in the guitar sound | step 1 |
 | spike only at the start of each note, then fine | not a rollback — recalibrate (tuner screen on the way into a song, lower-right, Enter) |
 | game says no cable / notes don't register | step 2 |
-| no guitar at all in `GAME AMP`, `PEDAL ONLY` on screen | press `\` — you are muted on purpose |
+| no guitar at all in `GAME AMP`, `PEDAL ONLY` on screen | press `'` — you are muted on purpose |
 | crash, white screen, hang, anything about the overlay text | step 3 |
 | the two new `RSMods.ini` lines bother you | step 4 |
 
@@ -84,7 +84,8 @@ Or step back one build at a time by copying a backup over `Y:\...\xinput1_3.dll`
 | `20260911-212341` | `6e64077` (`f5a2abd2…`) | + amp-source toggle |
 | `20260911-223104` | `c0ec81f` (`bb0454c8…`) | + mute logging / never-restore-to-0 guard |
 | `20260911-231651` | `1055e23` (`ab7e5eec…`) | + accuracy overlay |
-| *(installed)* | streak commit (`ac288994…`) | + note streak line |
+| `20260912-*` | `95e1650` (`ac288994…`) | + note streak line |
+| *(installed)* | no-Ctrl keys commit | + `RRSpeedDownKey`, `LoopClearKey` |
 
 `backups/` is untracked — do not delete it. Any build can also be rebuilt from its commit
 with `git checkout <hash> -- RSMods-src && scripts\build-dll.ps1`.
@@ -93,10 +94,12 @@ Verify with `Get-FileHash 'Y:\Rocksmith 2014 Edition - Remastered\xinput1_3.dll'
 
 **Step 4 — `RSMods.ini` lines**
 
-`ToggleAmpSourceKey`, `DisplayCurrentAccuracy` and `DisplayNoteStreak` can simply be deleted.
-Note all three have DLL-side defaults (`VK_OEM_5`, `on`, `on`), so deleting the line does not
-turn the feature off — set `DisplayCurrentAccuracy = off`, `DisplayNoteStreak = off`, or
-`ToggleAmpSourceKey = ` (blank) for that.
+`ToggleAmpSourceKey`, `RRSpeedDownKey`, `LoopClearKey`, `DisplayCurrentAccuracy` and
+`DisplayNoteStreak` can simply be deleted. All have DLL-side defaults (`VK_OEM_7`,
+`VK_OEM_MINUS`, `VK_OEM_5`, `on`, `on`), so deleting the line does not turn the feature off —
+set the `Display*` ones to `off`, or a key to blank (`LoopClearKey = `), for that. To get
+the old Ctrl-only layout back: `RewindKey = VK_OEM_MINUS`, `ToggleAmpSourceKey = VK_OEM_5`,
+blank the two new keys.
 
 **Calibration** lives in the game profile and cannot be "reverted"; just run it again.
 
@@ -144,6 +147,8 @@ Do these in order. Tick them off here as they pass.
 - [ ] **Streak line** — under the accuracy %: `12 in a row, best 37` counting up as you hit,
       flipping to `missed 3, best 37` on a dropped run, back to `0 in a row` on the next hit.
       Best should match the review screen's longest streak.
+- [ ] **No-Ctrl keys** — `-` slows, `\` clears the loop, `Backspace` rewinds, `'` toggles the
+      amp; the old `Ctrl` combos still work
 - [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -170,7 +175,7 @@ is its own commit, so a failing one can be reverted individually with
 | `config/` | Snapshots of the deployed `RSMods.ini`, `Rocksmith.ini`, `steam_emu.ini` |
 | `backups/` | DLL backups made by `install-dll.ps1` — **untracked, do not delete** |
 | `ROCKSMITH-PROJECT-NOTES.md` | Full setup and troubleshooting history |
-| `docs/keymap-wooting-80he.png` | Picture of every practice key on the Wooting 80HE; `docs/keymap-wooting-80he.py` regenerates it after a keybind change |
+| `docs/keymap-wooting-80he.png` | Picture of every practice key on the Wooting 80HE; `docs/keymap-wooting-80he.py` regenerates it after a keybind change. The key list itself is `ROCKSMITH-PROJECT-NOTES.md` §0 |
 
 Every commit is authored `arpan2711 <arpan.uon@gmail.com>`; git identity is set
 locally in this repo as well as globally.
@@ -248,15 +253,15 @@ it may drop this hand-added key; re-add it after using the GUI.**
 
 ---
 
-## Amp source toggle — the `\` key
+## Amp source toggle — the `'` key
 
 One key flips between hearing Rocksmith's virtual amp and hearing only your own
-pedalboard. Default bind is `\` (`VK_OEM_5`), which sits next to the loop keys
-`[` `]` so it is reachable without looking.
+pedalboard. Bound to `'` (`VK_OEM_7`), in the same right-hand cluster as the loop and
+speed keys so it is reachable without looking. (Was `\` until 12 Sep; `\` is now clear-loop.)
 
 ```ini
 [Audio Keybindings]
-ToggleAmpSourceKey = VK_OEM_5
+ToggleAmpSourceKey = VK_OEM_7
 ```
 
 **What it does:** mutes and unmutes the Wwise RTPC `Mixer_Player1` — the game's

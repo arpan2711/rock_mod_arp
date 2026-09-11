@@ -17,11 +17,13 @@ void Settings::Initialize()
 		{"RainbowNotesKey", "N"},
 		{"RemoveLyricsKey", "L"},
 		{"RRSpeedKey", "R"},
+		{"RRSpeedDownKey", "VK_OEM_MINUS"},
 		{"MenuToggleKey", "M"},
 		{"TuningOffsetKey", "O"},
 		{"ToggleExtendedRangeKey", "E"},
 		{"LoopStartKey", "Y"},
 		{"LoopEndKey", "U"},
+		{"LoopClearKey", "VK_OEM_5"},
 		{"RewindKey", "Z"},
 
 		{"MasterVolumeKey", "5"},
@@ -34,7 +36,7 @@ void Settings::Initialize()
 		{"DisplayMixerKey", "P"},
 		{"MutePlayer1Key", "X"},
 		{"MutePlayer2Key", "C"},
-		{"ToggleAmpSourceKey", "VK_OEM_5"},
+		{"ToggleAmpSourceKey", "VK_OEM_7"},
 
 		{"ForceReEnumerationEnabled", "automatic"},
 
@@ -186,10 +188,12 @@ void Settings::ReadKeyBinds() {
 			{ "RainbowNotesKey", reader.GetValue("Keybinds", "RainbowNotesKey", "N")},
 			{ "RemoveLyricsKey", reader.GetValue("Keybinds", "RemoveLyricsKey", "L")},
 			{ "RRSpeedKey", reader.GetValue("Keybinds", "RRSpeedKey", "R")},
+			{ "RRSpeedDownKey", reader.GetValue("Keybinds", "RRSpeedDownKey", "VK_OEM_MINUS")},
 			{ "TuningOffsetKey", reader.GetValue("Keybinds", "TuningOffsetKey", "O")},
 			{ "ToggleExtendedRangeKey", reader.GetValue("Keybinds", "ToggleExtendedRangeKey", "E")},
 			{ "LoopStartKey", reader.GetValue("Keybinds", "LoopStartKey", "Y")},
 			{ "LoopEndKey", reader.GetValue("Keybinds", "LoopEndKey", "U")},
+			{ "LoopClearKey", reader.GetValue("Keybinds", "LoopClearKey", "VK_OEM_5")},
 			{ "RewindKey", reader.GetValue("Keybinds", "RewindKey", "Z")},
 
 			{ "MasterVolumeKey", reader.GetValue("Audio Keybindings", "MasterVolumeKey", "5") },
@@ -202,7 +206,7 @@ void Settings::ReadKeyBinds() {
 			{ "DisplayMixerKey", reader.GetValue("Audio Keybindings", "DisplayMixerKey", "P") },
 			{ "MutePlayer1Key", reader.GetValue("Audio Keybindings", "MutePlayer1Key", "X")},
 			{ "MutePlayer2Key", reader.GetValue("Audio Keybindings", "MutePlayer2Key", "C")},
-			{ "ToggleAmpSourceKey", reader.GetValue("Audio Keybindings", "ToggleAmpSourceKey", "VK_OEM_5")}
+			{ "ToggleAmpSourceKey", reader.GetValue("Audio Keybindings", "ToggleAmpSourceKey", "VK_OEM_7")}
 	};
 	// _LOG("Read " << modSettings["ToggleLoftKey"] << std::endl);
 }

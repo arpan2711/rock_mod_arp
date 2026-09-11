@@ -266,6 +266,13 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 				_LOG("Triggered Mod: Toggle Extended Range" << std::endl);
 			}
 
+			// Looping mod. Clear the loop with a key of its own. Ctrl + start / end below still clears too.
+			else if (keyPressed == Settings::GetKeyBind("LoopClearKey") && Settings::ReturnSettingValue("AllowLooping") == "on" && MemHelpers::Contains(D3DHooks::currentMenu, fastRRModes)) {
+				loopStart = NULL;
+				loopEnd = NULL;
+				_LOG("(LOOP) Cleared" << std::endl);
+			}
+
 			// Looping mod. Set loop starting point.
 			else if (keyPressed == Settings::GetKeyBind("LoopStartKey") && Settings::ReturnSettingValue("AllowLooping") == "on" && MemHelpers::Contains(D3DHooks::currentMenu, fastRRModes)) {
 				if (GetKeyState(VK_CONTROL) & 0x8000) { // Is Control Pressed.
@@ -395,13 +402,13 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 		// Game must not be on the startup videos or it might crash
 		if (D3DHooks::GameLoaded) { 
 			// Riff Repeater > 100% mod.
-			if (keyPressed == Settings::GetKeyBind("RRSpeedKey") && Settings::ReturnSettingValue("RRSpeedAboveOneHundred") == "on" && (MemHelpers::Contains(D3DHooks::currentMenu, fastRRModes)) && RiffRepeater::loggedCurrentSongID) {
+			if ((keyPressed == Settings::GetKeyBind("RRSpeedKey") || keyPressed == Settings::GetKeyBind("RRSpeedDownKey")) && Settings::ReturnSettingValue("RRSpeedAboveOneHundred") == "on" && (MemHelpers::Contains(D3DHooks::currentMenu, fastRRModes)) && RiffRepeater::loggedCurrentSongID) {
 				
 				// Get the current speed of Riff Repeater.
 				realSongSpeed = RiffRepeater::GetSpeed(true);
 
-				// Add / Subtract User specified Interval
-				if (GetKeyState(VK_CONTROL) & 0x8000)
+				// Add / Subtract User specified Interval. Slow down on the dedicated key, or on Ctrl + the speed key.
+				if (keyPressed == Settings::GetKeyBind("RRSpeedDownKey") || (GetKeyState(VK_CONTROL) & 0x8000))
 					realSongSpeed -= (float)Settings::GetModSetting("RRSpeedInterval");
 				else
 					realSongSpeed += (float)Settings::GetModSetting("RRSpeedInterval");

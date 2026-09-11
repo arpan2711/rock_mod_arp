@@ -11,17 +11,24 @@ custom songs working, minimal game fluff.
 
 All of these work **live, inside a song**. No menus.
 
+One key each, no modifiers, all in the right-hand cluster of the main block (re-mapped
+12 Sep 2026; picture in `docs/keymap-wooting-80he.png`):
+
 | Key | Does |
 |---|---|
-| `-` | **Rewind 5 seconds** instantly |
+| `Backspace` | **Rewind 5 seconds** instantly |
 | `[` | Set **loop start** |
 | `]` | Set **loop end** — the section then repeats forever |
-| `Ctrl` + `[` / `]` | **Clear** the loop |
+| `\` | **Clear** the loop |
 | `=` | Riff Repeater speed **up** (2% per press) |
-| `Ctrl` + `=` | Riff Repeater speed **down** |
+| `-` | Riff Repeater speed **down** |
+| `'` | **Game amp ↔ pedal only** (mutes the game's guitar tone; backing track keeps going) |
+| `Ctrl` + `A` | Reload `RSMods.ini` without restarting |
 
-Workflow: drop `[` and `]` around a few bars, slow it with `Ctrl`+`=`, work the passage,
-then push past 100% with `=` so real tempo feels easy afterwards.
+`Ctrl`+`[`/`]` (clear) and `Ctrl`+`=` (slow down) still work as before, for muscle memory.
+
+Workflow: drop `[` and `]` around a few bars, tap `-` to slow it down, work the passage,
+then tap `=` past 100% so real tempo feels easy afterwards; `\` clears the loop.
 
 **Tunable in `RSMods.ini`:**
 
@@ -34,8 +41,9 @@ then push past 100% with `=` so real tempo feels easy afterwards.
 
 Keys are set with `VK_` names (`LoopStartKey = VK_OEM_4` etc). Valid names live in
 `DLL/Settings.hpp` → `keyMap`. **An unrecognised name binds silently to nothing**, so
-check the table rather than guessing. `[`=`VK_OEM_4`, `]`=`VK_OEM_6`, `=`=`VK_OEM_PLUS`,
-`-`=`VK_OEM_MINUS`. Function keys `VK_F1`–`VK_F24` all exist.
+check the table rather than guessing. `[`=`VK_OEM_4`, `]`=`VK_OEM_6`, `\`=`VK_OEM_5`,
+`'`=`VK_OEM_7`, `=`=`VK_OEM_PLUS`, `-`=`VK_OEM_MINUS`, `Backspace`=`VK_BACK`. Function keys
+`VK_F1`–`VK_F24` all exist.
 
 Backup before these were set: `RSMods.ini.before-practice`.
 
