@@ -59,6 +59,10 @@ Get-FileHash 'Y:\Rocksmith 2014 Edition - Remastered\xinput1_3.dll' -Algorithm S
 mod and not the game): `scripts\Test without RSMods.bat` renames the DLL away;
 `scripts\Restore RSMods.bat` puts it back. Both live in the game folder too.
 
+**RS_ASIO rollback** is separate from the DLL: delete `avrt.dll` from the game folder and
+Rocksmith goes back to plain WASAPI (`RS_ASIO.dll` and `RS_ASIO.ini` are inert without the
+proxy, but delete them too for tidiness).
+
 Nothing else on disk was changed by the install. `cache.psarc`, `RSMods.ini`,
 `Rocksmith.ini`, `steam_emu.ini` are all as they were (see
 `ROCKSMITH-PROJECT-NOTES.md` §4 for *their* backups — `cache.bak`, `*.ini.bak`).
@@ -82,6 +86,9 @@ Do these in order. Tick them off here as they pass.
 - [x] **Amp source toggle** — press `\` mid-song: the game's guitar tone drops out,
       backing track keeps playing, `PEDAL ONLY` shows top-left. Press again to
       bring the virtual amp back. *(11 Sep — works; see the input-device note below)*
+- [ ] **RS_ASIO** — game launches with `avrt.dll` in place; `RS_ASIO-log.txt` names
+      `NUX Audio` as the input driver; notes register with the webcam still set as the
+      Windows default input; the `\` toggle still behaves
 - [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -225,6 +232,43 @@ hear both unless you turn the amp (or the MG-300's master) down yourself. If the
 MG-300 MK2 accepts MIDI CC over USB, the mod could send it a mute or bypass on the
 same key — RSMods already has MIDI-out plumbing for tuning pedals (`Mods/Midi.cpp`).
 Not attempted yet; the pedal's MIDI support has not been confirmed.
+
+---
+
+## RS_ASIO — pin the NUX as the guitar input
+
+Installed 11 Sep 2026: **RS_ASIO v0.7.5** (`avrt.dll` proxy + `RS_ASIO.dll` + `RS_ASIO.ini`)
+in the game folder, from https://github.com/mdias/rs_asio. Hashes in
+`config/RS_ASIO.version.txt`; the deployed ini is snapshotted at `config/RS_ASIO.ini`.
+
+**Why:** without it the game takes its guitar from the *Windows default recording device*,
+which any newly plugged USB device (the webcam did it) can steal. RS_ASIO binds the input to
+the driver by name, so the Windows default no longer matters, and ASIO input latency is
+lower than WASAPI.
+
+**Routing ("option A"):**
+
+```ini
+[Config]
+EnableWasapiOutputs=1     ; game audio -> Windows default playback (Realtek desk speakers)
+EnableAsio=1
+[Asio.Output]
+Driver=                   ; deliberately blank - output stays on WASAPI
+[Asio.Input.0]
+Driver=NUX Audio          ; guitar in over the NUX ASIO driver, channel 0
+```
+
+Output stays where it was so the amp-source toggle above means the same thing it did
+before. The alternative ("option B") is `Asio.Output Driver=NUX Audio` and
+`EnableWasapiOutputs=0`, which sends *everything* out of the pedal into your amp.
+
+The NUX ASIO driver was already installed and registered 32-bit
+(`HKLM\SOFTWARE\WOW6432Node\ASIO\NUX Audio`), which the 32-bit game needs.
+RSMods and RS_ASIO coexist by design — RSMods logs `RS_ASIO Bypass2RTC` at startup.
+
+If `Channel=0` turns out to be the wrong NUX channel (silent, or a dry signal when a
+processed one is expected), `RS_ASIO-log.txt` lists the driver's channel names; change
+`Channel=` under `[Asio.Input.0]`.
 
 ---
 

@@ -53,7 +53,7 @@ Backup before these were set: `RSMods.ini.before-practice`.
 | RSMods source | `github.com/keremcanb/RSMods_for_Cracked_Rocksmith_2014` (fork of `Lovrom8/RSMods`) |
 | CDLC enabler | `D3DX9_42.dll` = **RSCDLCEnabler** (see §3) |
 | Profile | `arps` — saves live in `C:\Users\Public\Documents\Steam\CODEX\221680\remote\` |
-| Audio | WASAPI exclusive, ultra-low-latency on. **RS_ASIO is NOT installed.** |
+| Audio | **RS_ASIO v0.7.5** (installed 11 Sep 2026): guitar in over the `NUX Audio` ASIO driver, game audio out over WASAPI to the Windows default playback device (Realtek desk speakers). `Rocksmith.ini` still has exclusive mode + ultra-low-latency on. Config snapshot: `config/RS_ASIO.ini`. |
 
 ---
 
@@ -272,8 +272,8 @@ PreventMidSongPause=on
 ## 7. Optional extras not yet done
 
 - `LobbyEnabled=0` / `Overlays=0` in `steam_emu.ini` — if anything still tries to connect
-- **RS_ASIO** — not installed; the real fix for input latency with an audio interface.
-  Pairs with `BypassTwoRTCMessageBox`
+- ~~**RS_ASIO**~~ — installed 11 Sep 2026, see README §RS_ASIO. `BypassTwoRTCMessageBox` not yet
+  turned on; do it if the "two Real Tone Cables" prompt ever appears
 - RSMods **Fast Load** custom mod — upstream README recommends pairing it with
   `ForceProfileLoad`
 - Wire `Launch Rocksmith.bat` behaviour into the Song Manager's Launch button (only if
