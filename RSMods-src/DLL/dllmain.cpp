@@ -1,4 +1,5 @@
 #include "Main.hpp"
+#include "NoteData.h"
 
 #ifdef _DEBUG
 bool debug = true; // You ARE on a debug build.
@@ -582,6 +583,25 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 /// </summary>
 /// <param name="pDevice"> - Device Pointer</param>
 /// <returns>HRESULT of the official EndScene</returns>
+/// <summary>
+/// Live hit/miss ratio for the song being played. Ported from 1.2.8.4 (D3DOverlay::ReadAccuracy).
+/// Learn A Song and Score Attack keep their note counters in different structs behind the same static pointer.
+/// </summary>
+/// <returns>0..100, or 0 when not in a song mode / the pointer chain is not populated yet.</returns>
+static float ReadCurrentAccuracy() {
+	if (MemHelpers::Contains(D3DHooks::currentMenu, learnASongModes)) {
+		uintptr_t addr = MemUtil::FindDMAAddy(Offsets::baseHandle + Offsets::ptr_noteData, Offsets::ptr_noteDataOffsets, true);
+		return addr ? reinterpret_cast<const LearnASongNoteData*>(addr)->getAccuracy() : 0.0f;
+	}
+
+	if (MemHelpers::Contains(D3DHooks::currentMenu, scoreAttackModes)) {
+		uintptr_t addr = MemUtil::FindDMAAddy(Offsets::baseHandle + Offsets::ptr_scoreAttackNoteData, Offsets::ptr_scoreAttackNoteDataOffsets, true);
+		return addr ? reinterpret_cast<const ScoreAttackNoteData*>(addr)->getAccuracy() : 0.0f;
+	}
+
+	return 0.0f;
+}
+
 HRESULT APIENTRY D3DHooks::Hook_EndScene(IDirect3DDevice9* pDevice) {
 	_LOG_INIT;
 
@@ -921,6 +941,24 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 					static_cast<int>(WindowSize.height / 54.0f),                   // 20 pixels from top
 					static_cast<int>(WindowSize.width - WindowSize.width / 96.0f), // 20 left from right edge
 					static_cast<int>(WindowSize.height / 16.0f),                   // 120 pixels from top
+					pDevice,
+					{ NULL, NULL },
+					DT_RIGHT | DT_NOCLIP);
+		}
+
+		// Display Current Accuracy mod (ported from 1.2.8.4).
+		// One line under the song timer, right-aligned with it. The overlay font is height/72 tall, so height/27 clears it.
+		if (Settings::ReturnSettingValue("DisplayCurrentAccuracy") == "on" && MemHelpers::Contains(currentMenu, songModes) && MemHelpers::SongTimer() != 0.f) {
+			char accuracyText[16];
+			snprintf(accuracyText, sizeof(accuracyText), "%.1f%%", ReadCurrentAccuracy());
+
+			MemHelpers::DX9DrawText(
+					accuracyText,
+					whiteText,
+					static_cast<int>(WindowSize.width - WindowSize.width / 16.0f), // 120 pixels left from right edge in 1920x1080 resolution
+					static_cast<int>(WindowSize.height / 27.0f),                   // 40 pixels from top, one line under the song timer
+					static_cast<int>(WindowSize.width - WindowSize.width / 96.0f), // 20 left from right edge
+					static_cast<int>(WindowSize.height / 13.5f),                   // 80 pixels from top
 					pDevice,
 					{ NULL, NULL },
 					DT_RIGHT | DT_NOCLIP);

@@ -173,6 +173,7 @@
     <ClInclude Include="MemHelpers.hpp" />
     <ClInclude Include="Settings.hpp" />
     <ClInclude Include="Structs.hpp" />
+    <ClInclude Include="NoteData.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CC\rocksmithcrowdcontrol2.cs" />

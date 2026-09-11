@@ -281,6 +281,9 @@
     <ClInclude Include="Structs.hpp">
       <Filter>Main Headers</Filter>
     </ClInclude>
+    <ClInclude Include="NoteData.h">
+      <Filter>Main Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Lib\DirectX\d3d9.h">
       <Filter>Main Headers\DirectX</Filter>
     </ClInclude>

@@ -200,6 +200,12 @@ namespace Offsets { // Addresses for pre-2021 patch are in the comments
 	uintptr_t ptr_sampleRateSize = 0x135198C; // 0x0134E90C
 	uintptr_t ptr_sampleRateBuffer = 0x1251A9C; //0x0124EA9C
 
+	// Display Current Accuracy. Upstream RemasteredSeptember2022 slot; both modes hang off the same static, the chain differs.
+	uintptr_t ptr_noteData = 0x00F5F62C;
+	uintptr_t ptr_scoreAttackNoteData = 0x00F5F62C;
+	std::vector<unsigned int> ptr_noteDataOffsets{ 0xB0, 0x18, 0x4, 0x84, 0x0 };
+	std::vector<unsigned int> ptr_scoreAttackNoteDataOffsets{ 0xB0, 0x18, 0x4, 0x4C, 0x0 };
+
 	// Misc Mods
 	uintptr_t ptr_stringColor = 0x135F58C; // 0x135C50C
 	uintptr_t ptr_drunkShit = 0x12F7C20; // 0x012F4BA8 | search for float 0.333333, seems like it's static

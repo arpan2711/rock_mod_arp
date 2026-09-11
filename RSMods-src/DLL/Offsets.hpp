@@ -188,6 +188,12 @@ namespace Offsets {
 	extern uintptr_t ptr_sampleRateSize;
 	extern uintptr_t ptr_sampleRateBuffer;
 
+	// Display Current Accuracy (ported from 1.2.8.4). RVAs - add Offsets::baseHandle before use.
+	extern uintptr_t ptr_noteData;
+	extern uintptr_t ptr_scoreAttackNoteData;
+	extern std::vector<unsigned int> ptr_noteDataOffsets;
+	extern std::vector<unsigned int> ptr_scoreAttackNoteDataOffsets;
+
 	// Misc Mods
 	extern uintptr_t ptr_stringColor;
 	extern uintptr_t ptr_drunkShit; //search for float 0.333333, seems like it's static

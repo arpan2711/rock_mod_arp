@@ -10,12 +10,12 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 ## STATUS — 9 Sep 2026
 
-**Installed right now:** the patched DLL built from the amp-source-toggle commit
+**Installed right now:** the patched DLL built from the accuracy-overlay commit
 (branch `mod-update-1.2.8.x`).
 
 | File | SHA-256 | What it is |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | `bb0454c8 72ef20b7 ead0b988 02a08a29 d709a2c6 9a38dcee 29fdf6c4 478daf56` | **patched build, currently installed** |
+| `Y:\...\xinput1_3.dll` | `ab7e5eec c48942e8 bbec3ca3 55f87a75 1c12441e 1d8d5ec4 ef63837b 2ebdc674` | **patched build, currently installed** |
 | `backups\xinput1_3.dll.1.2.7.4-original` | `fc7c44e1 35a6717f a6f44f7d abc1d960 f86a931c 7cebef92 4af5dbde 4ed6976f` | **the original — rollback target** |
 | `backups\xinput1_3.dll.20260909-134102` | same as original | timestamped copy of the same file |
 
@@ -86,9 +86,15 @@ Do these in order. Tick them off here as they pass.
 - [x] **Amp source toggle** — press `\` mid-song: the game's guitar tone drops out,
       backing track keeps playing, `PEDAL ONLY` shows top-left. Press again to
       bring the virtual amp back. *(11 Sep — works; see the input-device note below)*
-- [ ] **RS_ASIO** — game launches with `avrt.dll` in place; `RS_ASIO-log.txt` names
+- [x] **RS_ASIO** — game launches with `avrt.dll` in place; `RS_ASIO-log.txt` names
       `NUX Audio` as the input driver; notes register with the webcam still set as the
-      Windows default input; the `\` toggle still behaves
+      Windows default input; the `\` toggle still behaves *(11 Sep — at the driver's
+      default 512-sample buffer)*
+- [ ] **RS_ASIO at 128 samples** — `CustomBufferSize=128`: no crackle or dropouts through
+      a full song; `RS_ASIO-log.txt` says `actual buffer duration: 2ms (128 frames)`
+- [ ] **Accuracy overlay** — a percentage appears under the song timer (top right) once
+      the song starts, moves as you hit and miss, and matches the number on the
+      song-review screen at the end. Check Score Attack too.
 - [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -258,6 +264,11 @@ Driver=                   ; deliberately blank - output stays on WASAPI
 Driver=NUX Audio          ; guitar in over the NUX ASIO driver, channel 0
 ```
 
+**Buffer:** the NUX driver's default is 512 samples (10.7 ms, 12 ms reported) — the game
+asks for 144. `BufferSizeMode=custom` / `CustomBufferSize=128` (2.7 ms) is set; the driver
+reports `min: 8 max: 2048`, powers of two. If it crackles go to 256; if it is clean, 64 is
+worth a try. Nothing else in the chain is slower than this now (WASAPI output is 3 ms).
+
 Output stays where it was so the amp-source toggle above means the same thing it did
 before. The alternative ("option B") is `Asio.Output Driver=NUX Audio` and
 `EnableWasapiOutputs=0`, which sends *everything* out of the pedal into your amp.
@@ -272,6 +283,35 @@ processed one is expected), `RS_ASIO-log.txt` lists the driver's channel names; 
 
 ---
 
+## Accuracy overlay — live hit % while you play
+
+```ini
+[Toggle Switches]
+DisplayCurrentAccuracy = on
+```
+
+Port of upstream 1.2.8.4's `DisplayCurrentAccuracy` (`D3DOverlay::ReadAccuracy`, commit
+`ee1a587`). Draws `hit / (hit + missed)` as a percentage one line under the song timer,
+right-aligned, whenever you are in a Learn A Song / Non-Stop Play / Score Attack screen
+and the song clock is running. Default **on** in the DLL, so it survives `RSMods.exe`
+rewriting the ini; set it `off` to hide it.
+
+**How it reads the number:** `NoteData.h` (verbatim from upstream) describes the two
+counter structs the game keeps — Learn A Song has `totalNotesHit` at `+0x30` and
+`totalNotesMissed` at `+0x40`; Score Attack has them at `+0x4C`/`+0x50` with streaks,
+phrases, score and multiplier around them. Both hang off the same static pointer,
+`baseHandle + 0x00F5F62C` (upstream's `RemasteredSeptember2022` slot), through the chains
+`{0xB0, 0x18, 0x4, 0x84, 0x0}` (LAS) and `{0xB0, 0x18, 0x4, 0x4C, 0x0}` (SA). The walk
+uses `FindDMAAddy(..., safe = true)` so a not-yet-populated chain reads as 0 % rather than
+a crash. The one deviation from upstream: the fork's overlay font is a fixed
+`height / 72`, so the line offset is a constant `height / 27` instead of measuring the
+font.
+
+This is also the number backlog item #3 (loop pass counter / auto speed ladder) needs to
+gate on "clean pass" — `ReadCurrentAccuracy()` in `dllmain.cpp` is the hook.
+
+---
+
 ## Ideas backlog — things to add ourselves
 
 Ranked for a practice tool. Effort is a guess.
@@ -281,11 +321,11 @@ Ranked for a practice tool. Effort is a guess.
 | 1 | **Version string bump** so `RSMods_debug.txt` says `1.2.7.4-arp.N` | 1 line | `_RSMODS_VERSION` macro, `dllmain.cpp:16` |
 | 2 | **Gate the Crowd Control server** behind `CrowdControlEnabled=off` — 3 threads + a TCP listener for Twitch, started unconditionally | small | `Initialize()` → `CrowdControl::StartServer()`; note it also applies the scroll-speed patch, keep that |
 | 3 | **Loop pass counter + auto speed ladder** — overlay `Loop 1:12–1:20 · pass 4 · 82%`; after N passes bump speed by `RRSpeedInterval` | medium | `loopStart`/`loopEnd`, `RiffRepeater::GetSpeed/SetSpeed`, `MemHelpers::DX9DrawText`; loop-wrap seek at `dllmain.cpp:~981` is the "pass done" event |
-| 4 | **Port `DisplayCurrentAccuracy`** from 1.2.8.2 — live accuracy % in-song; also what #3 needs to gate on "clean pass" | medium | upstream `NoteData.h` + `ptr_noteData` (Remastered `0x00F5F62C`, rebased on `baseHandle`) |
+| 4 | ~~**Port `DisplayCurrentAccuracy`**~~ — **done 11 Sep 2026**, see §Accuracy overlay | — | `ReadCurrentAccuracy()` in `dllmain.cpp` |
 | 5 | **Practice log** — CSV of `timestamp, song key, speed, loop bounds, accuracy`; Song Manager shows last-practised / minutes per song (the thing the profile decrypt failure blocked) | small DLL, medium SongManager | song-key change detection at `dllmain.cpp:107` |
 | 6 | **GUI checkbox for `PreventMidSongPause`** added programmatically in `UI.cs` | small-medium | closes the "RSMods.exe drops the key" caveat |
 
-Suggested order: 1 and 2 now (trivial, zero risk), then 4 → 3 → 5 as one arc.
+Suggested order: 1 and 2 now (trivial, zero risk), then 3 → 5 (4 is done).
 
 Not worth it: auto-loop by song section (needs phrase-boundary offsets — real reverse
 engineering); metronome (unclear whether Wwise exposes a click).
