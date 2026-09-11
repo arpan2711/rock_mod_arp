@@ -1,0 +1,154 @@
+# -*- coding: utf-8 -*-
+"""Render the Rocksmith practice shortcuts onto a Wooting 80HE (ANSI) keyboard picture.
+
+Output: docs/keymap-wooting-80he.png. Re-run after changing a keybind in RSMods.ini.
+Keys and behaviour come from RSMods.ini [Keybinds] / [Audio Keybindings] and dllmain.cpp.
+"""
+import os
+from PIL import Image, ImageDraw, ImageFont
+
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'keymap-wooting-80he.png')
+
+# ---- geometry (1u = one key) --------------------------------------------------------
+U = 100         # px per key unit
+G = 7           # gap inside the unit
+R = 10          # corner radius
+X0, Y0 = 60, 130
+FROW_GAP = 0.35 # extra vertical gap under the F-row
+
+# ---- colours -----------------------------------------------------------------------
+BG        = (24, 25, 28)
+CASE      = (38, 39, 43)
+KEY       = (58, 60, 66)
+KEY_EDGE  = (78, 80, 88)
+TEXT      = (215, 216, 220)
+TEXT_DIM  = (140, 142, 150)
+INK       = (18, 18, 20)
+
+GROUPS = {
+    # name: (fill colour, legend text)
+    'loop':   ((66, 133, 244),  'Loop'),
+    'speed':  ((255, 152, 0),   'Riff Repeater speed'),
+    'rewind': ((52, 199, 89),   'Rewind'),
+    'amp':    ((175, 82, 222),  'Amp source (game amp vs pedal)'),
+    'mod':    ((120, 122, 130), 'Modifier / settings'),
+    'game':   ((230, 230, 235), 'Rocksmith itself'),
+}
+
+# ---- shortcuts (what gets painted on the keys) ---------------------------------------
+# key label -> (group, primary text, ctrl text)
+SHORTCUTS = {
+    '-':     ('rewind', 'Rewind\n5 s', None),
+    '[':     ('loop',   'Loop\nstart', 'Ctrl: clear'),
+    ']':     ('loop',   'Loop\nend',   'Ctrl: clear'),
+    '=':     ('speed',  'Speed\n+2%',  'Ctrl: -2%'),
+    '\\':    ('amp',    'Game amp /\npedal only', None),
+    'A':     ('mod',    None,         'Ctrl:\nreload ini'),
+    'Ctrl':  ('mod',    'hold for\nalt. action', None),
+    'Esc':   ('game',   'Pause', None),
+    'Enter': ('game',   'Tuner screen:\nCalibrate', None),
+}
+
+# ---- Wooting 80HE ANSI layout: rows of (label, width_u, x_offset_u_before) ------------
+# Nav column is drawn from product photos; none of the shortcuts live there.
+ROWS = [
+    [('Esc',1,0),('F1',1,1),('F2',1,0),('F3',1,0),('F4',1,0),('F5',1,.5),('F6',1,0),('F7',1,0),('F8',1,0),
+     ('F9',1,.5),('F10',1,0),('F11',1,0),('F12',1,0),('Delete',1,.25)],
+    [('`',1,0),('1',1,0),('2',1,0),('3',1,0),('4',1,0),('5',1,0),('6',1,0),('7',1,0),('8',1,0),('9',1,0),('0',1,0),
+     ('-',1,0),('=',1,0),('Backspace',2,0),('Home',1,.25)],
+    [('Tab',1.5,0),('Q',1,0),('W',1,0),('E',1,0),('R',1,0),('T',1,0),('Y',1,0),('U',1,0),('I',1,0),('O',1,0),('P',1,0),
+     ('[',1,0),(']',1,0),('\\',1.5,0),('PgUp',1,.25)],
+    [('Caps',1.75,0),('A',1,0),('S',1,0),('D',1,0),('F',1,0),('G',1,0),('H',1,0),('J',1,0),('K',1,0),('L',1,0),(';',1,0),
+     ("'",1,0),('Enter',2.25,0),('PgDn',1,.25)],
+    [('Shift',2.25,0),('Z',1,0),('X',1,0),('C',1,0),('V',1,0),('B',1,0),('N',1,0),('M',1,0),(',',1,0),('.',1,0),('/',1,0),
+     ('Shift',1.75,0),('\u2191',1,0),('End',1,0)],
+    [('Ctrl',1.25,0),('Win',1.25,0),('Alt',1.25,0),('',6.25,0),('Alt',1,0),('Fn',1,0),('Ctrl',1,0),
+     ('\u2190',1,0),('\u2193',1,0),('\u2192',1,0)],
+]
+
+def font(size, bold=False):
+    for name in (('seguisb.ttf' if bold else 'segoeui.ttf'), ('arialbd.ttf' if bold else 'arial.ttf')):
+        p = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts', name)
+        if os.path.exists(p):
+            return ImageFont.truetype(p, size)
+    return ImageFont.load_default()
+
+F_TITLE = font(34, True)
+F_SUB   = font(18)
+F_KEY   = font(17, True)
+F_KEYS  = font(13)
+F_SHORT = font(13, True)
+F_LEG   = font(16)
+F_NOTE  = font(14)
+
+board_w = 16.25 * U
+board_h = (6 + FROW_GAP) * U
+W = int(X0 * 2 + board_w)
+H = int(Y0 + board_h + 250)
+img = Image.new('RGB', (W, H), BG)
+d = ImageDraw.Draw(img)
+
+# title
+d.text((X0, 36), 'Rocksmith practice keys \u2014 Wooting 80HE', font=F_TITLE, fill=TEXT)
+d.text((X0, 84), 'RSMods keybinds from RSMods.ini. Everything works live inside a song; Ctrl gives the alternate action.',
+       font=F_SUB, fill=TEXT_DIM)
+
+# case
+d.rounded_rectangle((X0 - 22, Y0 - 22, X0 + board_w + 22, Y0 + board_h + 22), radius=26, fill=CASE)
+
+def draw_key(x, y, w, label):
+    px0, py0 = X0 + x * U + G / 2, Y0 + y * U + G / 2
+    px1, py1 = X0 + (x + w) * U - G / 2, Y0 + (y + 1) * U - G / 2
+    sc = SHORTCUTS.get(label)
+    fill = GROUPS[sc[0]][0] if sc else KEY
+    ink = INK if sc else TEXT
+    d.rounded_rectangle((px0, py0, px1, py1), radius=R, fill=fill, outline=KEY_EDGE if not sc else None, width=1)
+    # legend / cap label top-left
+    lf = F_KEY if len(label) <= 2 else F_KEYS
+    d.text((px0 + 9, py0 + 6), label, font=lf, fill=ink)
+    if sc:
+        _, primary, ctrl = sc
+        ty = py0 + 28
+        if primary:
+            d.multiline_text((px0 + 9, ty), primary, font=F_SHORT, fill=ink, spacing=1)
+            ty += 17 * (primary.count('\n') + 1) + 4
+        if ctrl:
+            d.multiline_text((px0 + 9, ty), ctrl, font=F_SHORT, fill=ink, spacing=1)
+
+for r, row in enumerate(ROWS):
+    y = r if r == 0 else r + FROW_GAP
+    x = 0.0
+    for label, w, gap in row:
+        x += gap
+        draw_key(x, y, w, label)
+        x += w
+
+# legend
+ly = Y0 + board_h + 50
+lx = X0
+d.text((lx, ly), 'Legend', font=F_LEG, fill=TEXT)
+ly += 30
+for name in ('loop', 'speed', 'rewind', 'amp', 'mod', 'game'):
+    col, txt = GROUPS[name]
+    d.rounded_rectangle((lx, ly + 2, lx + 22, ly + 20), radius=5, fill=col)
+    d.text((lx + 32, ly), txt, font=F_LEG, fill=TEXT)
+    ly += 26
+
+# notes, right of the legend
+nx = X0 + 420
+ny = Y0 + board_h + 50
+notes = [
+    'Workflow:  [ and ] around a few bars  ->  Ctrl+= to slow it down  ->  work it  ->  = past 100%',
+    'so real tempo feels easy afterwards.',
+    'Loop and speed keys work in Learn A Song, Non-Stop Play and Riff Repeater; Rewind only while a song is playing.',
+    'Tunables in RSMods.ini:  RewindBy = 5000 ms,  RRSpeedInterval = 2 %,  LoopingLeadUp = 2000 ms run-in before the loop.',
+    '\\  mutes the game\'s guitar tone only - the backing track keeps playing. "PEDAL ONLY" shows top-left while muted.',
+    'Top-right overlay while playing:  song timer  /  accuracy %  /  "12 in a row, best 37" streak.',
+    'Nav column (Delete, Home, PgUp, PgDn, End) is drawn from product photos; no shortcut lives there.',
+]
+for t in notes:
+    d.text((nx, ny), t, font=F_NOTE, fill=TEXT_DIM)
+    ny += 24
+
+img.save(OUT)
+print('wrote', OUT, img.size)

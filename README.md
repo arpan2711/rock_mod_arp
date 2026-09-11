@@ -170,6 +170,7 @@ is its own commit, so a failing one can be reverted individually with
 | `config/` | Snapshots of the deployed `RSMods.ini`, `Rocksmith.ini`, `steam_emu.ini` |
 | `backups/` | DLL backups made by `install-dll.ps1` — **untracked, do not delete** |
 | `ROCKSMITH-PROJECT-NOTES.md` | Full setup and troubleshooting history |
+| `docs/keymap-wooting-80he.png` | Picture of every practice key on the Wooting 80HE; `docs/keymap-wooting-80he.py` regenerates it after a keybind change |
 
 Every commit is authored `arpan2711 <arpan.uon@gmail.com>`; git identity is set
 locally in this repo as well as globally.
