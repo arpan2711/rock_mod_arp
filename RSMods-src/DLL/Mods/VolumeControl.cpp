@@ -104,8 +104,9 @@ void VolumeControl::MutePlayer(bool player2)
 		player2Muted = true;
 	}
 	else {
-		Wwise::SoundEngine::Query::GetRTPCValue(mixer, AK_INVALID_GAME_OBJECT, &player1VolumeBeforeMute, &type);
+		AKRESULT queried = Wwise::SoundEngine::Query::GetRTPCValue(mixer, AK_INVALID_GAME_OBJECT, &player1VolumeBeforeMute, &type);
 		player1Muted = true;
+		_LOG("Mixer_Player1 volume before mute: " << player1VolumeBeforeMute << " (query result " << queried << ", value type " << type << ")" << std::endl);
 	}
 
 	// Mute (set volume to 0).
@@ -131,12 +132,19 @@ void VolumeControl::UnmutePlayer(bool player2)
 		player2Muted = false;
 	}
 	else {
+		// Never restore to silence. If the query at mute time failed, or handed back the RTPC default instead of the
+		// live value, an unmute that leaves the guitar at 0 is indistinguishable from the mod being broken.
+		if (player1VolumeBeforeMute <= 0.f) {
+			_LOG("Saved Mixer_Player1 volume was " << player1VolumeBeforeMute << ", restoring to 100 instead" << std::endl);
+			player1VolumeBeforeMute = 100.f;
+		}
+
 		Wwise::SoundEngine::SetRTPCValue(mixer, player1VolumeBeforeMute, AK_INVALID_GAME_OBJECT, 0, AkCurveInterpolation_Linear);
 		Wwise::SoundEngine::SetRTPCValue(mixer, player1VolumeBeforeMute, 0x1234, 0, AkCurveInterpolation_Linear);
 		player1Muted = false;
 	}
 
-	_LOG("Unmuted " << mixer << std::endl);
+	_LOG("Unmuted " << mixer << " back to " << (player2 ? player2VolumeBeforeMute : player1VolumeBeforeMute) << std::endl);
 }
 
 /// <summary>

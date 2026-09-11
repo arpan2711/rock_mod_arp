@@ -15,7 +15,7 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 | File | SHA-256 | What it is |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | `f5a2abd2 4a9e1b55 e6d03ed4 4ab34f17 5df16c19 0bb9f80e 925adf5d a799c0a1` | **patched build, currently installed** |
+| `Y:\...\xinput1_3.dll` | `bb0454c8 72ef20b7 ead0b988 02a08a29 d709a2c6 9a38dcee 29fdf6c4 478daf56` | **patched build, currently installed** |
 | `backups\xinput1_3.dll.1.2.7.4-original` | `fc7c44e1 35a6717f a6f44f7d abc1d960 f86a931c 7cebef92 4af5dbde 4ed6976f` | **the original — rollback target** |
 | `backups\xinput1_3.dll.20260909-134102` | same as original | timestamped copy of the same file |
 
@@ -79,9 +79,9 @@ Do these in order. Tick them off here as they pass.
 - [ ] **`PreventMidSongPause`** — add `PreventMidSongPause=on` under `[Toggle Switches]`
       in `RSMods.ini`, start a song, Alt-Tab: song keeps playing. *(Optional; off by
       default, so this is only tested if you want the feature.)*
-- [ ] **Amp source toggle** — press `\` mid-song: the game's guitar tone drops out,
+- [x] **Amp source toggle** — press `\` mid-song: the game's guitar tone drops out,
       backing track keeps playing, `PEDAL ONLY` shows top-left. Press again to
-      bring the virtual amp back.
+      bring the virtual amp back. *(11 Sep — works; see the input-device note below)*
 - [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -213,6 +213,12 @@ audio comes out).
 |---|---|---|
 | `GAME AMP` | backing track **+ Rocksmith's virtual amp** | still making noise |
 | `PEDAL ONLY` | backing track only | your actual tone |
+
+**Input device gotcha (found 11 Sep):** without RS_ASIO the game takes its guitar signal
+from the *Windows default recording device*. A webcam (`Microphone (Anker PowerConf C200)`)
+had become the default, so `GAME AMP` was amplifying the webcam and the toggle looked
+broken. Set **Line (NUX Audio)** as the default input before launching, or install RS_ASIO
+to pin it. `MutePlayer` now logs the captured volume and never restores to 0.
 
 **Known limit:** the PC cannot silence your physical amp, so in `GAME AMP` mode you
 hear both unless you turn the amp (or the MG-300's master) down yourself. If the
