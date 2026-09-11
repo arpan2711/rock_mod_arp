@@ -8,64 +8,101 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 ---
 
-## STATUS — 9 Sep 2026
+## STATUS — 11 Sep 2026 (evening)
 
-**Installed right now:** the patched DLL built from the accuracy-overlay commit
-(branch `mod-update-1.2.8.x`).
+**Installed right now** (branch `mod-update-1.2.8.x`, HEAD `cf0e208`):
 
-| File | SHA-256 | What it is |
+| Thing | State | Since |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | `ab7e5eec c48942e8 bbec3ca3 55f87a75 1c12441e 1d8d5ec4 ef63837b 2ebdc674` | **patched build, currently installed** |
-| `backups\xinput1_3.dll.1.2.7.4-original` | `fc7c44e1 35a6717f a6f44f7d abc1d960 f86a931c 7cebef92 4af5dbde 4ed6976f` | **the original — rollback target** |
-| `backups\xinput1_3.dll.20260909-134102` | same as original | timestamped copy of the same file |
+| `Y:\...\xinput1_3.dll` | accuracy-overlay build, commit `1055e23`, SHA-256 `ab7e5eec c48942e8 bbec3ca3 55f87a75 1c12441e 1d8d5ec4 ef63837b 2ebdc674` | 11 Sep 22:31 |
+| RS_ASIO v0.7.5 | `avrt.dll` + `RS_ASIO.dll` + `RS_ASIO.ini` in the game folder; input `NUX Audio` ch 0, output WASAPI, **64-sample buffer** | 11 Sep |
+| `Rocksmith.ini` | `LatencyBuffer=2` (was 4); everything else as before | 11 Sep |
+| `RSMods.ini` | `ToggleAmpSourceKey = VK_OEM_5`, `DisplayCurrentAccuracy = on` added; nothing removed | 11 Sep |
+| In-game calibration | redone on the ASIO input path, on the usual NUX preset | 11 Sep |
+| Windows default input | still the webcam — **irrelevant now**, RS_ASIO binds the NUX by name | — |
 
-**Smoke test (9 Sep):** game launches with the new DLL. `RSMods_debug.txt` from that
-run shows:
+Every deployed config file has a byte-identical snapshot under `config/`. To see what any
+of them looked like at an earlier point: `git show <commit>:config/Rocksmith.ini`.
 
-- `(BUG PREVENTION) Fixed Calibration At High Framerates` — the hook-site byte check
-  passed and the calibration hook is placed
-- all the usual bug-prevention lines present, so the DLL loaded and initialised
-- **zero** `Invalid Pointer: GetCurrentMenu` errors (the previous log had ~14)
-- still reports `1.2.7.4` — expected, version string deliberately unchanged
+**Tested and good (11 Sep):** the `\` amp-source toggle; RS_ASIO input at 512, 128 and 256
+samples; the accuracy overlay in Learn A Song; calibration at full refresh rate (so the
+high-framerate fix is confirmed); the four 9 Sep ports have had a couple of hours of play
+without incident.
 
-**Full testing has NOT been done yet.** See the checklist below.
+**Not yet tested:** the current **64-sample / `LatencyBuffer=2`** combination beyond a
+quick check — it needs a longer session. If the guitar crackles or drops out, that is the
+first suspect; see the rollback ladder.
 
 ---
 
 ## ROLLBACK — read this first if anything is wrong
 
-Close Rocksmith (it holds `xinput1_3.dll` open), then:
+Changes are layered. Undo the **most recent layer first** and re-test; each step is
+independent of the others. Close Rocksmith before touching `xinput1_3.dll` (it is held
+open); the ini files can be edited any time and are read at launch.
+
+**Symptom → first suspect**
+
+| Symptom | Start at |
+|---|---|
+| crackle / dropouts / stutter in the guitar sound | step 1 |
+| spike only at the start of each note, then fine | not a rollback — recalibrate (tuner screen on the way into a song, lower-right, Enter) |
+| game says no cable / notes don't register | step 2 |
+| no guitar at all in `GAME AMP`, `PEDAL ONLY` on screen | press `\` — you are muted on purpose |
+| crash, white screen, hang, anything about the overlay text | step 3 |
+| the two new `RSMods.ini` lines bother you | step 4 |
+
+**Step 1 — latency settings** (11 Sep evening, least tested)
+
+- `Y:\...\Rocksmith.ini`: `LatencyBuffer=2` → `4`
+- `Y:\...\RS_ASIO.ini`: `CustomBufferSize=64` → `128`, or `BufferSizeMode=custom` → `driver` to
+  hand control back to the NUX driver entirely (its default is 512)
+
+Do them one at a time so you know which one it was. Mirror the change in `config/`.
+
+**Step 2 — RS_ASIO entirely**
+
+Delete `avrt.dll` from the game folder (the proxy that loads it). `RS_ASIO.dll` and
+`RS_ASIO.ini` are inert without it; delete them too for tidiness. The game is back on
+plain WASAPI — which means it takes its guitar from the **Windows default recording
+device** again, so set that to `Line (NUX Audio)` (Settings → Sound → Input) before
+launching. Recalibrate afterwards; the level differs between the two paths.
+
+**Step 3 — the DLL**
 
 ```powershell
-scripts\restore-dll.ps1
+scripts\restore-dll.ps1      # -> pristine 1.2.7.4, refuses to run while the game is up
 ```
 
-That copies `backups\xinput1_3.dll.1.2.7.4-original` over the game's `xinput1_3.dll`.
-It refuses to run while the game is up.
+Or step back one build at a time by copying a backup over `Y:\...\xinput1_3.dll`:
 
-**Manual version** if PowerShell will not cooperate — it is only a file copy:
+| `backups\xinput1_3.dll.…` | Build | Has |
+|---|---|---|
+| `1.2.7.4-original` / `20260909-134102` | stock 1.2.7.4 (`fc7c44e1…`) | nothing of ours |
+| `20260911-211546` | `c0817e0` (`7846d005…`) | the four 9 Sep ports only |
+| `20260911-212341` | `6e64077` (`f5a2abd2…`) | + amp-source toggle |
+| `20260911-223104` | `c0ec81f` (`bb0454c8…`) | + mute logging / never-restore-to-0 guard |
+| *(installed)* | `1055e23` (`ab7e5eec…`) | + accuracy overlay |
 
-```
-copy /Y "C:\Users\arpan\rock_mod_arp\backups\xinput1_3.dll.1.2.7.4-original" "Y:\Rocksmith 2014 Edition - Remastered\xinput1_3.dll"
-```
+`backups/` is untracked — do not delete it. Any build can also be rebuilt from its commit
+with `git checkout <hash> -- RSMods-src && scripts\build-dll.ps1`.
 
-**Verify the rollback took** — the game's DLL should hash to `fc7c44e1…`:
+Verify with `Get-FileHash 'Y:\Rocksmith 2014 Edition - Remastered\xinput1_3.dll' -Algorithm SHA256`.
 
-```powershell
-Get-FileHash 'Y:\Rocksmith 2014 Edition - Remastered\xinput1_3.dll' -Algorithm SHA256
-```
+**Step 4 — `RSMods.ini` lines**
 
-**Nuclear option** (run the game with no RSMods at all, e.g. to prove a problem is the
-mod and not the game): `scripts\Test without RSMods.bat` renames the DLL away;
-`scripts\Restore RSMods.bat` puts it back. Both live in the game folder too.
+`ToggleAmpSourceKey` and `DisplayCurrentAccuracy` can simply be deleted. Note both have
+DLL-side defaults (`VK_OEM_5`, `on`), so deleting the line does not turn the feature off —
+set `DisplayCurrentAccuracy = off` / `ToggleAmpSourceKey = ` (blank) for that.
 
-**RS_ASIO rollback** is separate from the DLL: delete `avrt.dll` from the game folder and
-Rocksmith goes back to plain WASAPI (`RS_ASIO.dll` and `RS_ASIO.ini` are inert without the
-proxy, but delete them too for tidiness).
+**Calibration** lives in the game profile and cannot be "reverted"; just run it again.
 
-Nothing else on disk was changed by the install. `cache.psarc`, `RSMods.ini`,
-`Rocksmith.ini`, `steam_emu.ini` are all as they were (see
-`ROCKSMITH-PROJECT-NOTES.md` §4 for *their* backups — `cache.bak`, `*.ini.bak`).
+**Nuclear option** (prove a problem is the mod, not the game): `scripts\Test without
+RSMods.bat` renames the DLL away; `scripts\Restore RSMods.bat` puts it back. Both live in
+the game folder too. RS_ASIO is separate — step 2 for that.
+
+`cache.psarc` and `steam_emu.ini` were never touched (see `ROCKSMITH-PROJECT-NOTES.md`
+§4 for *their* backups — `cache.bak`, `*.ini.bak`).
 
 ---
 
@@ -344,8 +381,12 @@ Ranked for a practice tool. Effort is a guess.
 | 4 | ~~**Port `DisplayCurrentAccuracy`**~~ — **done 11 Sep 2026**, see §Accuracy overlay | — | `ReadCurrentAccuracy()` in `dllmain.cpp` |
 | 5 | **Practice log** — CSV of `timestamp, song key, speed, loop bounds, accuracy`; Song Manager shows last-practised / minutes per song (the thing the profile decrypt failure blocked) | small DLL, medium SongManager | song-key change detection at `dllmain.cpp:107` |
 | 6 | **GUI checkbox for `PreventMidSongPause`** added programmatically in `UI.cs` | small-medium | closes the "RSMods.exe drops the key" caveat |
+| 7 | **Hit-streak / miss-streak overlay** next to the accuracy % — `currentHitStreak`, `highestHitStreak`, `currentMissStreak` are already in `NoteData.h`, just private | small | add getters to `NoteData.h`, draw beside `ReadCurrentAccuracy()` |
+| 8 | **Strict loop** — miss a note inside a loop and it rewinds to the loop start; toggle key so it is opt-in | small-medium | `totalNotesMissed` delta per frame + the existing loop seek at `dllmain.cpp` |
+| 9 | **Switch the MG-300's preset from the game** — the MK2 takes MIDI over USB: CC#60 (or #73) on channel 1, value = preset number selects a preset; program change does *not* work and there is no bypass CC, so "mute the pedal" = switch to a user-made silent preset. Two uses: (a) make `\` also flip the pedal between your playing preset and a silent one, closing the "physical amp still makes noise" gap; (b) per-song pedal preset, the way `AutoTuneForSong` already sends tuning pedals a program change over WinMM MIDI out | medium; USB-MIDI on this pedal is reported as fiddly | `Mods/Midi.cpp` (already has a MIDI-out device picker + send), `ToggleAmpSourceKey` handler |
+| 10 | **`LatencyBuffer=1`** — last software latency step, only if 64/2 holds up over a long session | 1 line | `Rocksmith.ini` |
 
-Suggested order: 1 and 2 now (trivial, zero risk), then 3 → 5 (4 is done).
+Suggested order: 7 first (an hour, uses today's plumbing), then 3 → 8 → 5 as the practice arc; 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
 
 Not worth it: auto-loop by song section (needs phrase-boundary offsets — real reverse
 engineering); metronome (unclear whether Wwise exposes a click).
