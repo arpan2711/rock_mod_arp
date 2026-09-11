@@ -14,10 +14,10 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 | Thing | State | Since |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | no-Ctrl keys build, SHA-256 `2c2a5aa4 008380b6 37a08fc2 5f3939cb da13c6b5 7193c0ce cfd007f2 48b57d69` | 12 Sep |
+| `Y:\...\xinput1_3.dll` | overlay-details build, SHA-256 `6ecd9865 c9587daa 88bfb7c8 f99874aa 8e63687b 2a0f808a 1df496c3 a84c0907` | 12 Sep 00:18 |
 | RS_ASIO v0.7.5 | `avrt.dll` + `RS_ASIO.dll` + `RS_ASIO.ini` in the game folder; input `NUX Audio` ch 0, output WASAPI, **64-sample buffer** | 11 Sep |
 | `Rocksmith.ini` | `LatencyBuffer=2` (was 4); everything else as before | 11 Sep |
-| `RSMods.ini` | keys re-mapped to one cluster, no Ctrl: `RRSpeedDownKey`, `LoopClearKey` added, `RewindKey = VK_BACK`, `ToggleAmpSourceKey = VK_OEM_7`; plus `DisplayCurrentAccuracy = on`, `DisplayNoteStreak = on`; nothing removed | 12 Sep |
+| `RSMods.ini` | keys re-mapped to one cluster, no Ctrl: `RRSpeedDownKey`, `LoopClearKey` added, `RewindKey = VK_BACK`, `ToggleAmpSourceKey = VK_OEM_7`; plus `DisplayCurrentAccuracy`, `DisplayNoteStreak`, `DisplayLoopPasses` all `on`; nothing removed | 12 Sep |
 | In-game calibration | redone on the ASIO input path, on the usual NUX preset | 11 Sep |
 | Windows default input | still the webcam — **irrelevant now**, RS_ASIO binds the NUX by name | — |
 
@@ -85,7 +85,8 @@ Or step back one build at a time by copying a backup over `Y:\...\xinput1_3.dll`
 | `20260911-223104` | `c0ec81f` (`bb0454c8…`) | + mute logging / never-restore-to-0 guard |
 | `20260911-231651` | `1055e23` (`ab7e5eec…`) | + accuracy overlay |
 | `20260912-*` | `95e1650` (`ac288994…`) | + note streak line |
-| *(installed)* | no-Ctrl keys commit | + `RRSpeedDownKey`, `LoopClearKey` |
+| `20260912-001815` | `0827a56` (`2c2a5aa4…`) | + `RRSpeedDownKey`, `LoopClearKey` |
+| *(installed)* | overlay-details commit (`6ecd9865…`) | + hit/total, Score Attack line, loop pass counter |
 
 `backups/` is untracked — do not delete it. Any build can also be rebuilt from its commit
 with `git checkout <hash> -- RSMods-src && scripts\build-dll.ps1`.
@@ -94,9 +95,9 @@ Verify with `Get-FileHash 'Y:\Rocksmith 2014 Edition - Remastered\xinput1_3.dll'
 
 **Step 4 — `RSMods.ini` lines**
 
-`ToggleAmpSourceKey`, `RRSpeedDownKey`, `LoopClearKey`, `DisplayCurrentAccuracy` and
-`DisplayNoteStreak` can simply be deleted. All have DLL-side defaults (`VK_OEM_7`,
-`VK_OEM_MINUS`, `VK_OEM_5`, `on`, `on`), so deleting the line does not turn the feature off —
+`ToggleAmpSourceKey`, `RRSpeedDownKey`, `LoopClearKey`, `DisplayCurrentAccuracy`,
+`DisplayNoteStreak` and `DisplayLoopPasses` can simply be deleted. All have DLL-side defaults
+(`VK_OEM_7`, `VK_OEM_MINUS`, `VK_OEM_5`, `on`, `on`, `on`), so deleting the line does not turn the feature off —
 set the `Display*` ones to `off`, or a key to blank (`LoopClearKey = `), for that. To get
 the old Ctrl-only layout back: `RewindKey = VK_OEM_MINUS`, `ToggleAmpSourceKey = VK_OEM_5`,
 blank the two new keys.
@@ -149,6 +150,10 @@ Do these in order. Tick them off here as they pass.
       Best should match the review screen's longest streak.
 - [ ] **No-Ctrl keys** — `-` slows, `\` clears the loop, `Backspace` rewinds, `'` toggles the
       amp; the old `Ctrl` combos still work
+- [ ] **Overlay details** — accuracy line reads `94.2%  (184 of 196)`; with a loop set, a
+      `pass N` line appears and after each wrap becomes `pass N, last pass 92%`; setting or
+      clearing the loop resets it to `pass 1`. In Score Attack a `score …, x4 (best x8), …`
+      line appears under the streak.
 - [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -352,25 +357,34 @@ processed one is expected), `RS_ASIO-log.txt` lists the driver's channel names; 
 
 ---
 
-## Accuracy and streak overlay — live hit % while you play
+## Accuracy, streak and loop-pass overlay — how you are doing, while you play
 
 ```ini
 [Toggle Switches]
 DisplayCurrentAccuracy = on
 DisplayNoteStreak = on
+DisplayLoopPasses = on
 ```
 
-Two lines, stacked under the song timer, right-aligned:
+Stacked under the song timer, right-aligned:
 
 ```
-        1:42
-       94.2%
-12 in a row, best 37
+                 1:42
+    94.2%  (184 of 196)      <- DisplayCurrentAccuracy: hit / total so far
+  12 in a row, best 37       <- DisplayNoteStreak
+  pass 4, last pass 92%      <- DisplayLoopPasses: only while a full loop is set
 ```
 
-The streak line flips to `missed 3, best 37` while you are dropping notes and back to
-`0 in a row` on the next hit, so a fluffed run is visible without looking away from the
-highway. Each line has its own switch; both default **on** in the DLL.
+- The streak line flips to `missed 3, best 37` while you are dropping notes and back to
+  `0 in a row` on the next hit, so a fluffed run is visible without looking away.
+- **Loop passes** count each time the loop wraps. `last pass` is the hit % of the pass that
+  just finished (the game's counters are cumulative, so it is the delta since the previous
+  wrap; the 2 s lead-in is included). Setting, moving or clearing the loop resets to
+  `pass 1`. This is the first half of backlog item #3; the auto speed ladder builds on it.
+- **Score Attack** adds `score 12345, x4 (best x8), 120 perfect, 30 late` under the streak
+  (Learn A Song has no score).
+
+Each line has its own switch; all default **on** in the DLL.
 
 Port of upstream 1.2.8.4's `DisplayCurrentAccuracy` (`D3DOverlay::ReadAccuracy`, commit
 `ee1a587`). Draws `hit / (hit + missed)` as a percentage one line under the song timer,
@@ -390,9 +404,11 @@ a crash. The one deviation from upstream: the fork's overlay font is a fixed
 font.
 
 The streaks come from the same structs — `currentHitStreak`, `highestHitStreak`,
-`currentMissStreak` — exposed through three one-line getters added to `NoteData.h` (the
-layout itself is still upstream's, untouched). `ReadNoteStats()` in `dllmain.cpp` returns
-all of it in one struct per frame.
+`currentMissStreak`, plus the hit/missed totals and, for Score Attack, score, multiplier,
+perfect and late counts — exposed through one-line getters added to `NoteData.h` (the layout
+itself is still upstream's, untouched). `ReadNoteStats()` in `dllmain.cpp` returns all of it
+in one struct per frame. Pass counting hooks the loop-wrap seek in `Hook_EndScene`; that
+branch fires every frame until the seek lands, so `loopWrapPending` gates it to once per wrap.
 
 This is also the data backlog item #3 (loop pass counter / auto speed ladder) needs to
 gate on "clean pass" — `ReadNoteStats()` is the hook.
@@ -407,7 +423,7 @@ Ranked for a practice tool. Effort is a guess.
 |---|---|---|---|
 | 1 | **Version string bump** so `RSMods_debug.txt` says `1.2.7.4-arp.N` | 1 line | `_RSMODS_VERSION` macro, `dllmain.cpp:16` |
 | 2 | **Gate the Crowd Control server** behind `CrowdControlEnabled=off` — 3 threads + a TCP listener for Twitch, started unconditionally | small | `Initialize()` → `CrowdControl::StartServer()`; note it also applies the scroll-speed patch, keep that |
-| 3 | **Loop pass counter + auto speed ladder** — overlay `Loop 1:12–1:20 · pass 4 · 82%`; after N passes bump speed by `RRSpeedInterval` | medium | `loopStart`/`loopEnd`, `RiffRepeater::GetSpeed/SetSpeed`, `MemHelpers::DX9DrawText`; loop-wrap seek at `dllmain.cpp:~981` is the "pass done" event |
+| 3 | **Auto speed ladder** — pass counter and per-pass accuracy are **done (12 Sep)**; left: after N passes at or above X %, bump speed by `RRSpeedInterval` automatically | small now | `loopPass`, `lastPassAccuracy`, `RiffRepeater::SetSpeed` |
 | 4 | ~~**Port `DisplayCurrentAccuracy`**~~ — **done 11 Sep 2026**, see §Accuracy overlay | — | `ReadCurrentAccuracy()` in `dllmain.cpp` |
 | 5 | **Practice log** — CSV of `timestamp, song key, speed, loop bounds, accuracy`; Song Manager shows last-practised / minutes per song (the thing the profile decrypt failure blocked) | small DLL, medium SongManager | song-key change detection at `dllmain.cpp:107` |
 | 6 | **GUI checkbox for `PreventMidSongPause`** added programmatically in `UI.cs` | small-medium | closes the "RSMods.exe drops the key" caveat |

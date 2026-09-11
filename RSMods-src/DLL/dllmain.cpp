@@ -597,10 +597,11 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 /// </summary>
 struct NoteStats {
 	bool valid = false; // false when not in a song mode, or the pointer chain is not populated yet
+	bool scoreAttack = false;
 	float accuracy = 0.0f; // 0..100
-	int32_t hitStreak = 0;
-	int32_t bestHitStreak = 0;
-	int32_t missStreak = 0;
+	int32_t hit = 0, missed = 0;
+	int32_t hitStreak = 0, bestHitStreak = 0, missStreak = 0;
+	int32_t score = 0, multiplier = 0, bestMultiplier = 0, perfectHits = 0, lateHits = 0; // Score Attack only
 };
 
 static NoteStats ReadNoteStats() {
@@ -610,14 +611,32 @@ static NoteStats ReadNoteStats() {
 		uintptr_t addr = MemUtil::FindDMAAddy(Offsets::baseHandle + Offsets::ptr_noteData, Offsets::ptr_noteDataOffsets, true);
 		if (addr) {
 			const LearnASongNoteData* data = reinterpret_cast<const LearnASongNoteData*>(addr);
-			stats = { true, data->getAccuracy(), data->getCurrentHitStreak(), data->getHighestHitStreak(), data->getCurrentMissStreak() };
+			stats.valid = true;
+			stats.accuracy = data->getAccuracy();
+			stats.hit = data->getTotalNotesHit();
+			stats.missed = data->getTotalNotesMissed();
+			stats.hitStreak = data->getCurrentHitStreak();
+			stats.bestHitStreak = data->getHighestHitStreak();
+			stats.missStreak = data->getCurrentMissStreak();
 		}
 	}
 	else if (MemHelpers::Contains(D3DHooks::currentMenu, scoreAttackModes)) {
 		uintptr_t addr = MemUtil::FindDMAAddy(Offsets::baseHandle + Offsets::ptr_scoreAttackNoteData, Offsets::ptr_scoreAttackNoteDataOffsets, true);
 		if (addr) {
 			const ScoreAttackNoteData* data = reinterpret_cast<const ScoreAttackNoteData*>(addr);
-			stats = { true, data->getAccuracy(), data->getCurrentHitStreak(), data->getHighestHitStreak(), data->getCurrentMissStreak() };
+			stats.valid = true;
+			stats.scoreAttack = true;
+			stats.accuracy = data->getAccuracy();
+			stats.hit = data->getTotalNotesHit();
+			stats.missed = data->getTotalNotesMissed();
+			stats.hitStreak = data->getCurrentHitStreak();
+			stats.bestHitStreak = data->getHighestHitStreak();
+			stats.missStreak = data->getCurrentMissStreak();
+			stats.score = data->getCurrentScore();
+			stats.multiplier = data->getCurrentMultiplier();
+			stats.bestMultiplier = data->getHighestMultiplier();
+			stats.perfectHits = data->getTotalPerfectHits();
+			stats.lateHits = data->getTotalLateHits();
 		}
 	}
 
@@ -970,7 +989,7 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 
 		// Display Current Accuracy mod (ported from 1.2.8.4) and the note streak line under it.
 		// Stacked under the song timer, right-aligned with it. The overlay font is height/72 tall, so lines sit height/54 apart.
-		if ((Settings::ReturnSettingValue("DisplayCurrentAccuracy") == "on" || Settings::ReturnSettingValue("DisplayNoteStreak") == "on")
+		if ((Settings::ReturnSettingValue("DisplayCurrentAccuracy") == "on" || Settings::ReturnSettingValue("DisplayNoteStreak") == "on" || Settings::ReturnSettingValue("DisplayLoopPasses") == "on")
 			&& MemHelpers::Contains(currentMenu, songModes) && MemHelpers::SongTimer() != 0.f) {
 			const NoteStats stats = ReadNoteStats();
 			const int right = static_cast<int>(WindowSize.width - WindowSize.width / 96.0f); // 20 left from right edge in 1920x1080 resolution
@@ -979,8 +998,8 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 			int top = static_cast<int>(WindowSize.height / 27.0f);                            // 40 pixels from top, one line under the song timer
 
 			if (Settings::ReturnSettingValue("DisplayCurrentAccuracy") == "on") {
-				char accuracyText[16];
-				snprintf(accuracyText, sizeof(accuracyText), "%.1f%%", stats.accuracy);
+				char accuracyText[48];
+				snprintf(accuracyText, sizeof(accuracyText), "%.1f%%  (%d of %d)", stats.accuracy, stats.hit, stats.hit + stats.missed);
 				MemHelpers::DX9DrawText(accuracyText, whiteText, left, top, right, top + 2 * lineHeight, pDevice, { NULL, NULL }, DT_RIGHT | DT_NOCLIP);
 				top += lineHeight;
 			}
@@ -994,6 +1013,25 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 				else
 					snprintf(streakText, sizeof(streakText), "%d in a row, best %d", stats.hitStreak, stats.bestHitStreak);
 				MemHelpers::DX9DrawText(streakText, whiteText, left, top, right, top + 2 * lineHeight, pDevice, { NULL, NULL }, DT_RIGHT | DT_NOCLIP);
+				top += lineHeight;
+			}
+
+			// Score Attack has a score and a multiplier; Learn A Song does not.
+			if (Settings::ReturnSettingValue("DisplayNoteStreak") == "on" && stats.valid && stats.scoreAttack) {
+				char scoreText[64];
+				snprintf(scoreText, sizeof(scoreText), "score %d, x%d (best x%d), %d perfect, %d late", stats.score, stats.multiplier, stats.bestMultiplier, stats.perfectHits, stats.lateHits);
+				MemHelpers::DX9DrawText(scoreText, whiteText, left, top, right, top + 2 * lineHeight, pDevice, { NULL, NULL }, DT_RIGHT | DT_NOCLIP);
+				top += lineHeight;
+			}
+
+			// Loop passes: which time through this is, and how the last one went. Only while a full loop is set.
+			if (Settings::ReturnSettingValue("DisplayLoopPasses") == "on" && loopPass > 0 && loopStart != NULL && loopEnd != NULL) {
+				char passText[48];
+				if (lastPassAccuracy >= 0.f)
+					snprintf(passText, sizeof(passText), "pass %d, last pass %.0f%%", loopPass, lastPassAccuracy);
+				else
+					snprintf(passText, sizeof(passText), "pass %d", loopPass);
+				MemHelpers::DX9DrawText(passText, whiteText, left, top, right, top + 2 * lineHeight, pDevice, { NULL, NULL }, DT_RIGHT | DT_NOCLIP);
 			}
 		}
 
@@ -1055,6 +1093,18 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 			// Only enable looping in learn a song modes (learn a song & non-stop play)
 			if (MemHelpers::Contains(currentMenu, learnASongModes)) {
 
+				// New or changed loop points: start counting passes from here.
+				if (loopStart != passLoopStart || loopEnd != passLoopEnd) {
+					const NoteStats stats = ReadNoteStats();
+					passLoopStart = loopStart;
+					passLoopEnd = loopEnd;
+					passStartHit = stats.hit;
+					passStartTotal = stats.hit + stats.missed;
+					lastPassAccuracy = -1.f;
+					loopWrapPending = false;
+					loopPass = (loopStart != NULL && loopEnd != NULL) ? 1 : 0;
+				}
+
 				// Display loop start/end times
 				MemHelpers::DX9DrawText(
 						"Loop: " + ConvertFloatTimeToStringTime(loopStart) + " - " + ConvertFloatTimeToStringTime(loopEnd),
@@ -1087,7 +1137,22 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 
 				// If not paused AND we are at the end of the loop, seek to the start of the loop.
 				else if (loopStart != NULL && loopEnd != NULL && (MemHelpers::SongTimer() >= loopEnd)) {
+					// This branch runs every frame until the seek lands, so count the pass once per wrap.
+					if (!loopWrapPending) {
+						const NoteStats stats = ReadNoteStats();
+						const int32_t passTotal = (stats.hit + stats.missed) - passStartTotal;
+						if (stats.valid && passTotal > 0)
+							lastPassAccuracy = 100.f * (stats.hit - passStartHit) / passTotal;
+						passStartHit = stats.hit;
+						passStartTotal = stats.hit + stats.missed;
+						loopPass++;
+						loopWrapPending = true;
+						_LOG("(LOOP) Pass " << loopPass - 1 << " done at " << lastPassAccuracy << "%" << std::endl);
+					}
 					Wwise::SoundEngine::SeekOnEvent(std::string("Play_" + MemHelpers::GetSongKey()).c_str(), 0x1234, (AkTimeMs)(roughLoopStart * 1000), false);
+				}
+				else if (loopWrapPending && MemHelpers::SongTimer() < loopEnd) {
+					loopWrapPending = false; // the seek landed; the next time we reach loopEnd is a new pass
 				}
 			}
 			// Difference between learnASongModes & fastRRModes is the inclusion of RR. This means that this check is only gets the RR menus.

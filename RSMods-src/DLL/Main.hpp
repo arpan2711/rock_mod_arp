@@ -55,6 +55,14 @@ bool displayCurrentVolume = false;
 auto displayVolumeStartTime = std::chrono::steady_clock::time_point(); // Defaults to epoch time
 unsigned int currentVolumeIndex = 0; // Mixer volume to change. 0 - Master, 1 - Song, 2 - P1, 3 - P2, 4 - Mic, 5 - VO, 6 - SFX
 
+// Loop passes. Counted at the loop-wrap seek; the note counters are cumulative for the session, so a pass's accuracy
+// is the delta since the previous wrap. Reset whenever the loop points change.
+int loopPass = 0;                 // 0 = no loop, 1 = first time through
+float lastPassAccuracy = -1.f;    // -1 = no completed pass yet
+int passStartHit = 0, passStartTotal = 0;
+float passLoopStart = 0.f, passLoopEnd = 0.f; // the loop the counters belong to
+bool loopWrapPending = false;     // the seek has been issued and the song timer has not yet come back below loopEnd
+
 // Amp source mod. Toggles the game's virtual amp (Mixer_Player1) so you can drop to your pedalboard's own tone and back.
 auto ampSourceSwitchedAt = std::chrono::steady_clock::time_point(); // Defaults to epoch time
 

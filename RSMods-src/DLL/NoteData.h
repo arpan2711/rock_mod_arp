@@ -30,10 +30,12 @@ public:
         return totalNotesMissed + totalNotesHit;
     }
 
-    // rock_mod_arp: streak counters for the on-screen overlay. Layout above is upstream's, unchanged.
+    // rock_mod_arp: counters for the on-screen overlay. Layout above is upstream's, unchanged.
     int32_t getCurrentHitStreak() const { return currentHitStreak; }
     int32_t getHighestHitStreak() const { return highestHitStreak; }
     int32_t getCurrentMissStreak() const { return currentMissStreak; }
+    int32_t getTotalNotesHit() const { return totalNotesHit; }
+    int32_t getTotalNotesMissed() const { return totalNotesMissed; }
 };
 #pragma pack(pop)
 
@@ -86,9 +88,16 @@ public:
         return totalNotesMissed + totalNotesHit;
     }
 
-    // rock_mod_arp: streak counters for the on-screen overlay. Layout above is upstream's, unchanged.
+    // rock_mod_arp: counters for the on-screen overlay. Layout above is upstream's, unchanged.
     int32_t getCurrentHitStreak() const { return currentHitStreak; }
     int32_t getHighestHitStreak() const { return highestHitStreak; }
     int32_t getCurrentMissStreak() const { return currentMissStreak; }
+    int32_t getTotalNotesHit() const { return totalNotesHit; }
+    int32_t getTotalNotesMissed() const { return totalNotesMissed; }
+    int32_t getCurrentScore() const { return currentScore; }
+    int32_t getCurrentMultiplier() const { return currentMultiplier; }
+    int32_t getHighestMultiplier() const { return highestMultiplier; }
+    int32_t getTotalPerfectHits() const { return totalPerfectHits; }
+    int32_t getTotalLateHits() const { return totalLateHits; }
 };
 #pragma pack(pop)
