@@ -584,22 +584,37 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 /// <param name="pDevice"> - Device Pointer</param>
 /// <returns>HRESULT of the official EndScene</returns>
 /// <summary>
-/// Live hit/miss ratio for the song being played. Ported from 1.2.8.4 (D3DOverlay::ReadAccuracy).
-/// Learn A Song and Score Attack keep their note counters in different structs behind the same static pointer.
+/// Everything the in-song overlay shows about how you are playing. Accuracy is ported from 1.2.8.4
+/// (D3DOverlay::ReadAccuracy); the streaks come from the same structs. Learn A Song and Score Attack keep
+/// their note counters in different structs behind the same static pointer.
 /// </summary>
-/// <returns>0..100, or 0 when not in a song mode / the pointer chain is not populated yet.</returns>
-static float ReadCurrentAccuracy() {
+struct NoteStats {
+	bool valid = false; // false when not in a song mode, or the pointer chain is not populated yet
+	float accuracy = 0.0f; // 0..100
+	int32_t hitStreak = 0;
+	int32_t bestHitStreak = 0;
+	int32_t missStreak = 0;
+};
+
+static NoteStats ReadNoteStats() {
+	NoteStats stats;
+
 	if (MemHelpers::Contains(D3DHooks::currentMenu, learnASongModes)) {
 		uintptr_t addr = MemUtil::FindDMAAddy(Offsets::baseHandle + Offsets::ptr_noteData, Offsets::ptr_noteDataOffsets, true);
-		return addr ? reinterpret_cast<const LearnASongNoteData*>(addr)->getAccuracy() : 0.0f;
+		if (addr) {
+			const LearnASongNoteData* data = reinterpret_cast<const LearnASongNoteData*>(addr);
+			stats = { true, data->getAccuracy(), data->getCurrentHitStreak(), data->getHighestHitStreak(), data->getCurrentMissStreak() };
+		}
 	}
-
-	if (MemHelpers::Contains(D3DHooks::currentMenu, scoreAttackModes)) {
+	else if (MemHelpers::Contains(D3DHooks::currentMenu, scoreAttackModes)) {
 		uintptr_t addr = MemUtil::FindDMAAddy(Offsets::baseHandle + Offsets::ptr_scoreAttackNoteData, Offsets::ptr_scoreAttackNoteDataOffsets, true);
-		return addr ? reinterpret_cast<const ScoreAttackNoteData*>(addr)->getAccuracy() : 0.0f;
+		if (addr) {
+			const ScoreAttackNoteData* data = reinterpret_cast<const ScoreAttackNoteData*>(addr);
+			stats = { true, data->getAccuracy(), data->getCurrentHitStreak(), data->getHighestHitStreak(), data->getCurrentMissStreak() };
+		}
 	}
 
-	return 0.0f;
+	return stats;
 }
 
 HRESULT APIENTRY D3DHooks::Hook_EndScene(IDirect3DDevice9* pDevice) {
@@ -946,22 +961,33 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 					DT_RIGHT | DT_NOCLIP);
 		}
 
-		// Display Current Accuracy mod (ported from 1.2.8.4).
-		// One line under the song timer, right-aligned with it. The overlay font is height/72 tall, so height/27 clears it.
-		if (Settings::ReturnSettingValue("DisplayCurrentAccuracy") == "on" && MemHelpers::Contains(currentMenu, songModes) && MemHelpers::SongTimer() != 0.f) {
-			char accuracyText[16];
-			snprintf(accuracyText, sizeof(accuracyText), "%.1f%%", ReadCurrentAccuracy());
+		// Display Current Accuracy mod (ported from 1.2.8.4) and the note streak line under it.
+		// Stacked under the song timer, right-aligned with it. The overlay font is height/72 tall, so lines sit height/54 apart.
+		if ((Settings::ReturnSettingValue("DisplayCurrentAccuracy") == "on" || Settings::ReturnSettingValue("DisplayNoteStreak") == "on")
+			&& MemHelpers::Contains(currentMenu, songModes) && MemHelpers::SongTimer() != 0.f) {
+			const NoteStats stats = ReadNoteStats();
+			const int right = static_cast<int>(WindowSize.width - WindowSize.width / 96.0f); // 20 left from right edge in 1920x1080 resolution
+			const int left = static_cast<int>(WindowSize.width - WindowSize.width / 6.0f);   // 320 wide so the streak line never spills off the right
+			const int lineHeight = static_cast<int>(WindowSize.height / 54.0f);              // 20 pixels
+			int top = static_cast<int>(WindowSize.height / 27.0f);                            // 40 pixels from top, one line under the song timer
 
-			MemHelpers::DX9DrawText(
-					accuracyText,
-					whiteText,
-					static_cast<int>(WindowSize.width - WindowSize.width / 16.0f), // 120 pixels left from right edge in 1920x1080 resolution
-					static_cast<int>(WindowSize.height / 27.0f),                   // 40 pixels from top, one line under the song timer
-					static_cast<int>(WindowSize.width - WindowSize.width / 96.0f), // 20 left from right edge
-					static_cast<int>(WindowSize.height / 13.5f),                   // 80 pixels from top
-					pDevice,
-					{ NULL, NULL },
-					DT_RIGHT | DT_NOCLIP);
+			if (Settings::ReturnSettingValue("DisplayCurrentAccuracy") == "on") {
+				char accuracyText[16];
+				snprintf(accuracyText, sizeof(accuracyText), "%.1f%%", stats.accuracy);
+				MemHelpers::DX9DrawText(accuracyText, whiteText, left, top, right, top + 2 * lineHeight, pDevice, { NULL, NULL }, DT_RIGHT | DT_NOCLIP);
+				top += lineHeight;
+			}
+
+			// Streak reads as "12 in a row, best 37"; while you are missing it flips to how many you have missed, so a
+			// dropped passage is visible without looking away from the highway.
+			if (Settings::ReturnSettingValue("DisplayNoteStreak") == "on" && stats.valid) {
+				char streakText[48];
+				if (stats.missStreak > 0)
+					snprintf(streakText, sizeof(streakText), "missed %d, best %d", stats.missStreak, stats.bestHitStreak);
+				else
+					snprintf(streakText, sizeof(streakText), "%d in a row, best %d", stats.hitStreak, stats.bestHitStreak);
+				MemHelpers::DX9DrawText(streakText, whiteText, left, top, right, top + 2 * lineHeight, pDevice, { NULL, NULL }, DT_RIGHT | DT_NOCLIP);
+			}
 		}
 
 		// Riff Repeater > 100% mod.

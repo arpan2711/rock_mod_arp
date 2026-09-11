@@ -10,14 +10,14 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 ## STATUS — 11 Sep 2026 (evening)
 
-**Installed right now** (branch `mod-update-1.2.8.x`, HEAD `cf0e208`):
+**Installed right now** (branch `mod-update-1.2.8.x`):
 
 | Thing | State | Since |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | accuracy-overlay build, commit `1055e23`, SHA-256 `ab7e5eec c48942e8 bbec3ca3 55f87a75 1c12441e 1d8d5ec4 ef63837b 2ebdc674` | 11 Sep 22:31 |
+| `Y:\...\xinput1_3.dll` | streak-overlay build, SHA-256 `ac288994 b0fcacd9 674c494f 575c2678 b453a555 c3b9715b e83be6cc 6b825e4e` | 11 Sep 23:16 |
 | RS_ASIO v0.7.5 | `avrt.dll` + `RS_ASIO.dll` + `RS_ASIO.ini` in the game folder; input `NUX Audio` ch 0, output WASAPI, **64-sample buffer** | 11 Sep |
 | `Rocksmith.ini` | `LatencyBuffer=2` (was 4); everything else as before | 11 Sep |
-| `RSMods.ini` | `ToggleAmpSourceKey = VK_OEM_5`, `DisplayCurrentAccuracy = on` added; nothing removed | 11 Sep |
+| `RSMods.ini` | `ToggleAmpSourceKey = VK_OEM_5`, `DisplayCurrentAccuracy = on`, `DisplayNoteStreak = on` added; nothing removed | 11 Sep |
 | In-game calibration | redone on the ASIO input path, on the usual NUX preset | 11 Sep |
 | Windows default input | still the webcam — **irrelevant now**, RS_ASIO binds the NUX by name | — |
 
@@ -30,7 +30,8 @@ high-framerate fix is confirmed); the four 9 Sep ports have had a couple of hour
 without incident.
 
 **Not yet tested:** the current **64-sample / `LatencyBuffer=2`** combination beyond a
-quick check — it needs a longer session. If the guitar crackles or drops out, that is the
+quick check — it needs a longer session — and the **streak line** under the accuracy %
+(built 23:16, not yet seen in a song). If the guitar crackles or drops out, that is the
 first suspect; see the rollback ladder.
 
 ---
@@ -82,7 +83,8 @@ Or step back one build at a time by copying a backup over `Y:\...\xinput1_3.dll`
 | `20260911-211546` | `c0817e0` (`7846d005…`) | the four 9 Sep ports only |
 | `20260911-212341` | `6e64077` (`f5a2abd2…`) | + amp-source toggle |
 | `20260911-223104` | `c0ec81f` (`bb0454c8…`) | + mute logging / never-restore-to-0 guard |
-| *(installed)* | `1055e23` (`ab7e5eec…`) | + accuracy overlay |
+| `20260911-231651` | `1055e23` (`ab7e5eec…`) | + accuracy overlay |
+| *(installed)* | streak commit (`ac288994…`) | + note streak line |
 
 `backups/` is untracked — do not delete it. Any build can also be rebuilt from its commit
 with `git checkout <hash> -- RSMods-src && scripts\build-dll.ps1`.
@@ -91,9 +93,10 @@ Verify with `Get-FileHash 'Y:\Rocksmith 2014 Edition - Remastered\xinput1_3.dll'
 
 **Step 4 — `RSMods.ini` lines**
 
-`ToggleAmpSourceKey` and `DisplayCurrentAccuracy` can simply be deleted. Note both have
-DLL-side defaults (`VK_OEM_5`, `on`), so deleting the line does not turn the feature off —
-set `DisplayCurrentAccuracy = off` / `ToggleAmpSourceKey = ` (blank) for that.
+`ToggleAmpSourceKey`, `DisplayCurrentAccuracy` and `DisplayNoteStreak` can simply be deleted.
+Note all three have DLL-side defaults (`VK_OEM_5`, `on`, `on`), so deleting the line does not
+turn the feature off — set `DisplayCurrentAccuracy = off`, `DisplayNoteStreak = off`, or
+`ToggleAmpSourceKey = ` (blank) for that.
 
 **Calibration** lives in the game profile and cannot be "reverted"; just run it again.
 
@@ -138,6 +141,9 @@ Do these in order. Tick them off here as they pass.
 - [x] **Accuracy overlay** — a percentage appears under the song timer (top right) once
       the song starts, moves as you hit and miss, and matches the number on the
       song-review screen at the end. Check Score Attack too. *(11 Sep — Learn A Song confirmed)*
+- [ ] **Streak line** — under the accuracy %: `12 in a row, best 37` counting up as you hit,
+      flipping to `missed 3, best 37` on a dropped run, back to `0 in a row` on the next hit.
+      Best should match the review screen's longest streak.
 - [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -340,12 +346,25 @@ processed one is expected), `RS_ASIO-log.txt` lists the driver's channel names; 
 
 ---
 
-## Accuracy overlay — live hit % while you play
+## Accuracy and streak overlay — live hit % while you play
 
 ```ini
 [Toggle Switches]
 DisplayCurrentAccuracy = on
+DisplayNoteStreak = on
 ```
+
+Two lines, stacked under the song timer, right-aligned:
+
+```
+        1:42
+       94.2%
+12 in a row, best 37
+```
+
+The streak line flips to `missed 3, best 37` while you are dropping notes and back to
+`0 in a row` on the next hit, so a fluffed run is visible without looking away from the
+highway. Each line has its own switch; both default **on** in the DLL.
 
 Port of upstream 1.2.8.4's `DisplayCurrentAccuracy` (`D3DOverlay::ReadAccuracy`, commit
 `ee1a587`). Draws `hit / (hit + missed)` as a percentage one line under the song timer,
@@ -364,8 +383,13 @@ a crash. The one deviation from upstream: the fork's overlay font is a fixed
 `height / 72`, so the line offset is a constant `height / 27` instead of measuring the
 font.
 
-This is also the number backlog item #3 (loop pass counter / auto speed ladder) needs to
-gate on "clean pass" — `ReadCurrentAccuracy()` in `dllmain.cpp` is the hook.
+The streaks come from the same structs — `currentHitStreak`, `highestHitStreak`,
+`currentMissStreak` — exposed through three one-line getters added to `NoteData.h` (the
+layout itself is still upstream's, untouched). `ReadNoteStats()` in `dllmain.cpp` returns
+all of it in one struct per frame.
+
+This is also the data backlog item #3 (loop pass counter / auto speed ladder) needs to
+gate on "clean pass" — `ReadNoteStats()` is the hook.
 
 ---
 
@@ -381,12 +405,12 @@ Ranked for a practice tool. Effort is a guess.
 | 4 | ~~**Port `DisplayCurrentAccuracy`**~~ — **done 11 Sep 2026**, see §Accuracy overlay | — | `ReadCurrentAccuracy()` in `dllmain.cpp` |
 | 5 | **Practice log** — CSV of `timestamp, song key, speed, loop bounds, accuracy`; Song Manager shows last-practised / minutes per song (the thing the profile decrypt failure blocked) | small DLL, medium SongManager | song-key change detection at `dllmain.cpp:107` |
 | 6 | **GUI checkbox for `PreventMidSongPause`** added programmatically in `UI.cs` | small-medium | closes the "RSMods.exe drops the key" caveat |
-| 7 | **Hit-streak / miss-streak overlay** next to the accuracy % — `currentHitStreak`, `highestHitStreak`, `currentMissStreak` are already in `NoteData.h`, just private | small | add getters to `NoteData.h`, draw beside `ReadCurrentAccuracy()` |
+| 7 | ~~**Hit-streak / miss-streak overlay**~~ — **done 11 Sep 2026**, see §Accuracy and streak overlay | — | `ReadNoteStats()` in `dllmain.cpp` |
 | 8 | **Strict loop** — miss a note inside a loop and it rewinds to the loop start; toggle key so it is opt-in | small-medium | `totalNotesMissed` delta per frame + the existing loop seek at `dllmain.cpp` |
 | 9 | **Switch the MG-300's preset from the game** — the MK2 takes MIDI over USB: CC#60 (or #73) on channel 1, value = preset number selects a preset; program change does *not* work and there is no bypass CC, so "mute the pedal" = switch to a user-made silent preset. Two uses: (a) make `\` also flip the pedal between your playing preset and a silent one, closing the "physical amp still makes noise" gap; (b) per-song pedal preset, the way `AutoTuneForSong` already sends tuning pedals a program change over WinMM MIDI out | medium; USB-MIDI on this pedal is reported as fiddly | `Mods/Midi.cpp` (already has a MIDI-out device picker + send), `ToggleAmpSourceKey` handler |
 | 10 | **`LatencyBuffer=1`** — last software latency step, only if 64/2 holds up over a long session | 1 line | `Rocksmith.ini` |
 
-Suggested order: 7 first (an hour, uses today's plumbing), then 3 → 8 → 5 as the practice arc; 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
+Suggested order: 3 → 8 → 5 as the practice arc (7 is done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
 
 Not worth it: auto-loop by song section (needs phrase-boundary offsets — real reverse
 engineering); metronome (unclear whether Wwise exposes a click).

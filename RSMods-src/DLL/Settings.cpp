@@ -42,6 +42,7 @@ void Settings::Initialize()
 		{"VolumeControlEnabled", "off"},
 		{"ShowSongTimerEnabled", "on"},
 		{"DisplayCurrentAccuracy", "on"},
+		{"DisplayNoteStreak", "on"},
 		{"ForceReEnumerationEnabled", "off"},
 		{"RainbowStringsEnabled", "off"},
 		{"ExtendedRangeEnabled", "on"},
@@ -260,6 +261,7 @@ void Settings::ReadModSettings() {
 	modSettings["PreventMidSongPause"] = reader.GetValue("Toggle Switches", "PreventMidSongPause", "off");
 	modSettings["ShowSongTimerEnabled"] = reader.GetValue("Toggle Switches", "ShowSongTimer", "off");
 	modSettings["DisplayCurrentAccuracy"] = reader.GetValue("Toggle Switches", "DisplayCurrentAccuracy", "on");
+	modSettings["DisplayNoteStreak"] = reader.GetValue("Toggle Switches", "DisplayNoteStreak", "on");
 	modSettings["ForceReEnumerationEnabled"] = reader.GetValue("Toggle Switches", "ForceReEnumeration", "automatic");
 	modSettings["RainbowStringsEnabled"] = reader.GetValue("Toggle Switches", "RainbowStrings", "off");
 	modSettings["RainbowNotesEnabled"] = reader.GetValue("Toggle Switches", "RainbowNotes", "off");

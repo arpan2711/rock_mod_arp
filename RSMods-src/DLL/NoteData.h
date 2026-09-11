@@ -29,6 +29,11 @@ public:
     int32_t getTotalNotes() const {
         return totalNotesMissed + totalNotesHit;
     }
+
+    // rock_mod_arp: streak counters for the on-screen overlay. Layout above is upstream's, unchanged.
+    int32_t getCurrentHitStreak() const { return currentHitStreak; }
+    int32_t getHighestHitStreak() const { return highestHitStreak; }
+    int32_t getCurrentMissStreak() const { return currentMissStreak; }
 };
 #pragma pack(pop)
 
@@ -80,5 +85,10 @@ public:
     int32_t getTotalNotes() const {
         return totalNotesMissed + totalNotesHit;
     }
+
+    // rock_mod_arp: streak counters for the on-screen overlay. Layout above is upstream's, unchanged.
+    int32_t getCurrentHitStreak() const { return currentHitStreak; }
+    int32_t getHighestHitStreak() const { return highestHitStreak; }
+    int32_t getCurrentMissStreak() const { return currentMissStreak; }
 };
 #pragma pack(pop)
