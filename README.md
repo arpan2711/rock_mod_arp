@@ -16,7 +16,7 @@ truth for everything hand-made; the game folder is where it gets deployed.
 |---|---|---|
 | `Y:\...\xinput1_3.dll` | overlay-details build, SHA-256 `6ecd9865 c9587daa 88bfb7c8 f99874aa 8e63687b 2a0f808a 1df496c3 a84c0907` | 12 Sep 00:18 |
 | RS_ASIO v0.7.5 | `avrt.dll` + `RS_ASIO.dll` + `RS_ASIO.ini` in the game folder; input `NUX Audio` ch 0, output WASAPI, **64-sample buffer** | 11 Sep |
-| `Rocksmith.ini` | `LatencyBuffer=1` (was 4, then 2); everything else as before | 12 Sep |
+| `Rocksmith.ini` | `LatencyBuffer=2` — the floor: 1 crackles on this PC; everything else as before | 12 Sep |
 | `RSMods.ini` | keys re-mapped to one cluster, no Ctrl: `RRSpeedDownKey`, `LoopClearKey` added, `RewindKey = VK_BACK`, `ToggleAmpSourceKey = VK_OEM_7`; plus `DisplayCurrentAccuracy`, `DisplayNoteStreak`, `DisplayLoopPasses` all `on`; nothing removed | 12 Sep |
 | In-game calibration | redone on the ASIO input path, on the usual NUX preset | 11 Sep |
 | Windows default input | still the webcam — **irrelevant now**, RS_ASIO binds the NUX by name | — |
@@ -55,7 +55,7 @@ open); the ini files can be edited any time and are read at launch.
 
 **Step 1 — latency settings** (11 Sep evening, least tested)
 
-- `Y:\...\Rocksmith.ini`: `LatencyBuffer=1` → `2` (was fine), then `4` (stock)
+- `Y:\...\Rocksmith.ini`: `LatencyBuffer=2` → `3`, then `4` (stock). Do not go to 1 — tried 12 Sep, crackles
 - `Y:\...\RS_ASIO.ini`: `CustomBufferSize=64` → `128`, or `BufferSizeMode=custom` → `driver` to
   hand control back to the NUX driver entirely (its default is 512)
 
@@ -139,7 +139,7 @@ Do these in order. Tick them off here as they pass.
 - [x] **RS_ASIO at 256 samples** — no click, but latency noticeable; back to 128 after
       recalibrating fixed the click *(11 Sep)*
 - [x] **64 samples + `LatencyBuffer=2`** — played fine *(12 Sep)*
-- [ ] **`LatencyBuffer=1`** — a full song with no crackle or dropouts
+- [x] **`LatencyBuffer=1`** — tried, too much crackle, back to 2 *(12 Sep)*
 - [x] **Calibration** at the monitor's real refresh rate — done 11 Sep from the in-song tuner
       screen, meter filled and completed
 - [x] **Accuracy overlay** — a percentage appears under the song timer (top right) once
@@ -330,10 +330,10 @@ reports `min: 8 max: 2048`, powers of two. 128 was clean after calibration, so 6
 next try (11 Sep, untested). WASAPI output is 3 ms.
 
 **`Rocksmith.ini` `LatencyBuffer`** is the game's own internal input buffering, in audio
-periods. Shipped at 4; **2** with the 64-sample ASIO buffer played fine through a session
-(11–12 Sep); set to **1** on 12 Sep as the last software step (untested). Fallback order if
-the guitar crackles or drops out: `LatencyBuffer` 1 -> 2 first (2 is known good), then
-`CustomBufferSize` 64 -> 128. Both are read at launch. If a spike appears only at note
+periods. Shipped at 4; **2** with the 64-sample ASIO buffer plays clean. **1 was tried on
+12 Sep and crackles** — that is the floor on this PC, so 2 is final. Fallback order if the
+guitar ever crackles at 2: `LatencyBuffer` 2 -> 3 first, then `CustomBufferSize` 64 -> 128.
+Both are read at launch. If a spike appears only at note
 onset, that is calibration, not either buffer - see the note below.
 
 **Note-onset click (11 Sep):** at 128 every note started with a spike. 256 removed it but
@@ -431,7 +431,7 @@ Ranked for a practice tool. Effort is a guess.
 | 7 | ~~**Hit-streak / miss-streak overlay**~~ — **done 11 Sep 2026**, see §Accuracy and streak overlay | — | `ReadNoteStats()` in `dllmain.cpp` |
 | 8 | **Strict loop** — miss a note inside a loop and it rewinds to the loop start; toggle key so it is opt-in | small-medium | `totalNotesMissed` delta per frame + the existing loop seek at `dllmain.cpp` |
 | 9 | **Switch the MG-300's preset from the game** — the MK2 takes MIDI over USB: CC#60 (or #73) on channel 1, value = preset number selects a preset; program change does *not* work and there is no bypass CC, so "mute the pedal" = switch to a user-made silent preset. Two uses: (a) make `\` also flip the pedal between your playing preset and a silent one, closing the "physical amp still makes noise" gap; (b) per-song pedal preset, the way `AutoTuneForSong` already sends tuning pedals a program change over WinMM MIDI out | medium; USB-MIDI on this pedal is reported as fiddly | `Mods/Midi.cpp` (already has a MIDI-out device picker + send), `ToggleAmpSourceKey` handler |
-| 10 | ~~**`LatencyBuffer=1`**~~ — applied 12 Sep, see §RS_ASIO | — | `Rocksmith.ini` |
+| 10 | ~~**`LatencyBuffer=1`**~~ — tried 12 Sep, crackles; 2 is the floor | — | `Rocksmith.ini` |
 
 Suggested order: 3 → 8 → 5 as the practice arc (7 is done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
 
