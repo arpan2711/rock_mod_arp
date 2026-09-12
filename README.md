@@ -8,7 +8,7 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 ---
 
-## STATUS — 11 Sep 2026 (evening)
+## STATUS — 12 Sep 2026
 
 **Installed right now** (branch `mod-update-1.2.8.x`):
 
@@ -24,15 +24,15 @@ truth for everything hand-made; the game folder is where it gets deployed.
 Every deployed config file has a byte-identical snapshot under `config/`. To see what any
 of them looked like at an earlier point: `git show <commit>:config/Rocksmith.ini`.
 
-**Tested and good (11 Sep):** the `\` amp-source toggle; RS_ASIO input at 512, 128 and 256
-samples; the accuracy overlay in Learn A Song; calibration at full refresh rate (so the
-high-framerate fix is confirmed); the four 9 Sep ports have had a couple of hours of play
-without incident.
+**Tested and good (11–12 Sep), in play:** the amp-source toggle; RS_ASIO input at 64
+samples with `LatencyBuffer=2` (a full session, clean — `1` crackles, so this is the floor);
+accuracy / streak / loop-pass overlay in Learn A Song; the no-Ctrl key cluster; calibration
+at full refresh rate; the four 9 Sep ports.
 
-**Not yet tested:** the current **64-sample / `LatencyBuffer=2`** combination beyond a
-quick check — it needs a longer session — and the **streak line** under the accuracy %
-(built 23:16, not yet seen in a song). If the guitar crackles or drops out, that is the
-first suspect; see the rollback ladder.
+**Not yet exercised:** the Score Attack overlay line (score / multiplier / perfect / late) —
+nobody has played a Score Attack song since it went in. Everything else on the checklist
+is ticked. **Left here on 12 Sep, working; next thing to decide is the menu tone (backlog
+#11).**
 
 ---
 
@@ -145,16 +145,16 @@ Do these in order. Tick them off here as they pass.
 - [x] **Accuracy overlay** — a percentage appears under the song timer (top right) once
       the song starts, moves as you hit and miss, and matches the number on the
       song-review screen at the end. Check Score Attack too. *(11 Sep — Learn A Song confirmed)*
-- [ ] **Streak line** — under the accuracy %: `12 in a row, best 37` counting up as you hit,
+- [x] **Streak line** — under the accuracy %: `12 in a row, best 37` counting up as you hit,
       flipping to `missed 3, best 37` on a dropped run, back to `0 in a row` on the next hit.
       Best should match the review screen's longest streak.
-- [ ] **No-Ctrl keys** — `-` slows, `\` clears the loop, `Backspace` rewinds, `'` toggles the
+- [x] **No-Ctrl keys** — `-` slows, `\` clears the loop, `Backspace` rewinds, `'` toggles the
       amp; the old `Ctrl` combos still work
-- [ ] **Overlay details** — accuracy line reads `94.2%  (184 of 196)`; with a loop set, a
+- [x] **Overlay details** *(Learn A Song; Score Attack line still unexercised)* — accuracy line reads `94.2%  (184 of 196)`; with a loop set, a
       `pass N` line appears and after each wrap becomes `pass N, last pass 92%`; setting or
       clearing the loop resets it to `pass 1`. In Score Attack a `score …, x4 (best x8), …`
       line appears under the streak.
-- [ ] A normal practice session — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
+- [x] A normal practice session *(12 Sep)* — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
 **If a step fails:** roll back (above), then note *which* step in this file. Each fix
@@ -432,8 +432,9 @@ Ranked for a practice tool. Effort is a guess.
 | 8 | **Strict loop** — miss a note inside a loop and it rewinds to the loop start; toggle key so it is opt-in | small-medium | `totalNotesMissed` delta per frame + the existing loop seek at `dllmain.cpp` |
 | 9 | **Switch the MG-300's preset from the game** — the MK2 takes MIDI over USB: CC#60 (or #73) on channel 1, value = preset number selects a preset; program change does *not* work and there is no bypass CC, so "mute the pedal" = switch to a user-made silent preset. Two uses: (a) make `\` also flip the pedal between your playing preset and a silent one, closing the "physical amp still makes noise" gap; (b) per-song pedal preset, the way `AutoTuneForSong` already sends tuning pedals a program change over WinMM MIDI out | medium; USB-MIDI on this pedal is reported as fiddly | `Mods/Midi.cpp` (already has a MIDI-out device picker + send), `ToggleAmpSourceKey` handler |
 | 10 | ~~**`LatencyBuffer=1`**~~ — tried 12 Sep, crackles; 2 is the floor | — | `Rocksmith.ini` |
+| 11 | **Menu / tuner tone** — the game's out-of-song tone is a hard-wired high-gain preset and Rocksmith has no default-tone setting (Ubisoft confirmed on the Steam forums). Two ways round it, decision pending: **A** clean tone saved to Tone Designer slot 2–4, pressed by hand after every song; **B** (recommended) `MuteGameAmpOutsideSongs=on` — hold `Mixer_Player1` at 0 whenever `currentMenu` is not a song mode, so menus / tuner / lessons are pedal-only and the game amp returns when a song starts, respecting the `'` toggle. ~20 lines on the amp-toggle plumbing | small | `VolumeControl::MutePlayer`, `songModes`, the per-frame block in `Hook_EndScene` |
 
-Suggested order: 3 → 8 → 5 as the practice arc (7 is done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
+Suggested order: 11 first (decide A/B, an hour), then 3 → 8 → 5 as the practice arc (7 is done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
 
 Not worth it: auto-loop by song section (needs phrase-boundary offsets — real reverse
 engineering); metronome (unclear whether Wwise exposes a click).
