@@ -57,6 +57,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 .iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;
   padding:5px 9px;font-family:var(--mono);font-size:11px;cursor:pointer;line-height:1.4;text-decoration:none;display:inline-block}
 .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+.iconbtn.quit:hover{border-color:var(--stop,#c0392b);color:var(--stop,#c0392b)}
+.empty{padding:60px 22px;text-align:center;color:var(--ink-3);font-size:14px}
 
 .banner{padding:9px 22px;font-size:13px;display:none;align-items:center;gap:10px;border-bottom:1px solid var(--rule)}
 .banner.show{display:flex}
@@ -158,6 +160,7 @@ details .body{padding-top:0}
     <a class="iconbtn" href="/notes">guitar notes</a>
     <button class="iconbtn" id="theme" title="Switch theme">theme</button>
     <button class="iconbtn" id="reload" title="Re-read the ini and status from disk">reload</button>
+    <button class="iconbtn quit" id="quit" title="Stop the Song Manager server">quit manager</button>
   </div>
 </div>
 
@@ -471,6 +474,10 @@ function flash(kind, text, ms = 6000) {
 
 /* ---------------- heartbeat (keeps the server's idle watchdog alive) ---------------- */
 setInterval(() => fetch('/api/status').catch(() => {}), 20000);
+$('quit').onclick = async () => {
+  await fetch('/api/quit', {method: 'POST'}).catch(() => {});
+  document.body.innerHTML = '<div class="empty">Manager stopped. You can close this tab.</div>';
+};
 fetch('/api/status').catch(() => {});
 
 load();

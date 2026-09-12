@@ -53,6 +53,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 .iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;padding:5px 9px;font-family:var(--mono);
   font-size:11px;cursor:pointer;line-height:1.4;text-decoration:none;display:inline-block}
 .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+.iconbtn.quit:hover{border-color:var(--stop,#c0392b);color:var(--stop,#c0392b)}
+.empty{padding:60px 22px;text-align:center;color:var(--ink-3);font-size:14px}
 
 .tools{padding:12px 22px;border-bottom:1px solid var(--rule);background:var(--surface-2);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .tools label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);display:flex;flex-direction:column;gap:3px}
@@ -136,6 +138,7 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
     <a class="iconbtn" href="/">song manager</a>
     <a class="iconbtn" href="/settings">mod settings</a>
     <button class="iconbtn" id="theme" title="Switch theme">theme</button>
+    <button class="iconbtn quit" id="quit" title="Stop the Song Manager server">quit manager</button>
   </div>
 </div>
 
@@ -489,6 +492,11 @@ $('ex-stop').onclick = () => { endRun(); $('ex-target').innerHTML = 'stopped'; }
 $('ex-metro').onchange = () => { if (run && !run.done) { if ($('ex-metro').checked) metroStart(Number($('ex-bpm').value) || 72); else metroStop(); } };
 $('ex-bpm').onchange = () => { if (metro) metroStart(Number($('ex-bpm').value) || 72); };
 fillExercises();
+$('quit').onclick = async () => {
+  try { await stop(); } catch (e) {}
+  await fetch('/api/quit', {method: 'POST'}).catch(() => {});
+  document.body.innerHTML = '<div class="empty">Manager stopped. You can close this tab.</div>';
+};
 </script>
 </body>
 </html>

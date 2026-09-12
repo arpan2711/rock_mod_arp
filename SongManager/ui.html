@@ -67,6 +67,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
   padding:5px 9px;font-family:var(--mono);font-size:11px;cursor:pointer;line-height:1.4}
 .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
 a.iconbtn{text-decoration:none;display:inline-block}
+.iconbtn.quit:hover{border-color:var(--stop,#c0392b);color:var(--stop,#c0392b)}
 
 /* ---------- toolbar ---------- */
 .tools{padding:12px 22px;border-bottom:1px solid var(--rule);background:var(--surface-2);
@@ -179,6 +180,7 @@ select,.setname{padding:7px 9px;border:1px solid var(--rule);border-radius:3px;b
     <a class="iconbtn" href="/settings" title="RSMods keys, switches and tunables">mod settings</a>
     <button class="iconbtn" id="theme" title="Switch theme">theme</button>
     <button class="iconbtn" id="rescan" title="Re-read every psarc from disk">rescan</button>
+    <button class="iconbtn quit" id="quit" title="Stop the Song Manager server">quit manager</button>
   </div>
 </div>
 
@@ -240,7 +242,6 @@ select,.setname{padding:7px 9px;border:1px solid var(--rule);border-radius:3px;b
   <span class="spacer"></span>
   <button class="btn primary" id="apply" disabled>Apply changes</button>
   <button class="btn go" id="launch">Launch Rocksmith</button>
-  <button class="btn" id="quit">Quit manager</button>
 </div>
 
 <div class="scan" id="scan">

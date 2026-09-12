@@ -600,8 +600,13 @@ and back down; every exercise carries a suggested tempo.
 the same pitch on another string still counts. Adding more shapes is one line each in
 `CATALOGUE` — the generator (`shape(root, formula, lo, hi)`) does the fingering.
 
-**Not yet opened in a browser.** Test with the *test tone*: begin an exercise, then slide the
-tone through the sequence and watch the chips advance.
+**First browser run (12 Sep) showed an empty exercise list.** Cause: `const GUITAR_EX` at the top
+of a classic script is global but *not* a `window` property, so `window.GUITAR_EX` was undefined.
+Fixed by assigning it explicitly. Test without a guitar using the *test tone*: begin an exercise,
+then slide the tone through the sequence and watch the chips advance.
+
+**Quit manager** now sits in the masthead of all three pages (song manager, mod settings, guitar
+notes), not only in the Song Manager toolbar.
 
 ### #13 — the original spec (as agreed 12 Sep, kept for the record)
 

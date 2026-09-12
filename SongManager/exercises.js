@@ -210,4 +210,5 @@ const GUITAR_EX = (() => {
   return { CATALOGUE, FORMULAS, OPEN, SNAME, noteName, label, shape, rootToRoot, upDown, spider, createRun };
 })();
 
+if (typeof window !== 'undefined') window.GUITAR_EX = GUITAR_EX;
 if (typeof module !== 'undefined' && module.exports) module.exports = GUITAR_EX;
