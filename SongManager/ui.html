@@ -66,6 +66,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 .iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;
   padding:5px 9px;font-family:var(--mono);font-size:11px;cursor:pointer;line-height:1.4}
 .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+a.iconbtn{text-decoration:none;display:inline-block}
 
 /* ---------- toolbar ---------- */
 .tools{padding:12px 22px;border-bottom:1px solid var(--rule);background:var(--surface-2);
@@ -174,6 +175,7 @@ select,.setname{padding:7px 9px;border:1px solid var(--rule);border-radius:3px;b
     <div class="stat off"><span class="n" id="s-off">–</span><span class="l">disabled</span></div>
     <div class="stat pending"><span class="n" id="s-pending">0</span><span class="l">pending</span></div>
     <div class="stat"><span class="n" id="s-size">–</span><span class="l">gb on disk</span></div>
+    <a class="iconbtn" href="/settings" title="RSMods keys, switches and tunables">mod settings</a>
     <button class="iconbtn" id="theme" title="Switch theme">theme</button>
     <button class="iconbtn" id="rescan" title="Re-read every psarc from disk">rescan</button>
   </div>

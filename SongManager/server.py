@@ -22,6 +22,7 @@ import webbrowser
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import psarc  # noqa: E402
+import rsmods_ini  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GAME = os.path.dirname(HERE)
@@ -30,6 +31,11 @@ DISABLED = os.path.join(GAME, "dlc_disabled")
 EXE = os.path.join(GAME, "Rocksmith2014.exe")
 CACHE = os.path.join(HERE, "library.json")
 SETLISTS = os.path.join(HERE, "setlists.json")
+
+# RSMods settings page. The repo snapshot is optional; without it the page still
+# edits the game copy, it just cannot keep config\RSMods.ini in step.
+REPO = rsmods_ini.find_repo(HERE)
+MODPATHS = rsmods_ini.Paths(GAME, REPO)
 
 IDLE_TIMEOUT = 180  # seconds without a browser heartbeat before we shut down
 
@@ -209,6 +215,38 @@ def write_setlists(data):
     os.replace(tmp, SETLISTS)
 
 
+# ---------------------------------------------------------------- mod settings
+
+def settings_payload():
+    """Everything the settings page needs in one round trip."""
+    if not os.path.isfile(MODPATHS.game_ini):
+        return {"error": "RSMods.ini not found at %s" % MODPATHS.game_ini}
+    return {
+        "schema": {
+            "fields": rsmods_ini.FIELDS,
+            "groups": rsmods_ini.GROUPS,
+            "labels": rsmods_ini.VK_LABELS,
+        },
+        "values": rsmods_ini.current_values(MODPATHS),
+        "sync": rsmods_ini.sync_state(MODPATHS),
+        "status": rsmods_ini.status(MODPATHS),
+        "paths": {"gameIni": MODPATHS.game_ini, "repoIni": MODPATHS.repo_ini},
+    }
+
+
+def apply_settings(changes):
+    """Write the changes, then redraw the keymap picture if a key or tunable moved."""
+    result = rsmods_ini.apply(MODPATHS, changes)
+    if result.get("ok") and result.get("wrote"):
+        redraw = any(
+            (f := rsmods_ini.lookup(fid)) and f["kind"] in ("key", "int")
+            for fid in result["changed"]
+        )
+        if redraw:
+            result["keymap"] = rsmods_ini.regenerate_keymap(MODPATHS)
+    return result
+
+
 # ---------------------------------------------------------------- http
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -245,6 +283,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if path in ("/", "/index.html"):
                 with open(os.path.join(HERE, "ui.html"), "rb") as fh:
                     self._send(200, fh.read(), "text/html; charset=utf-8")
+            elif path == "/settings":
+                with open(os.path.join(HERE, "settings.html"), "rb") as fh:
+                    self._send(200, fh.read(), "text/html; charset=utf-8")
+            elif path == "/api/settings":
+                self._send(200, settings_payload())
+            elif path == "/api/keymap.png":
+                png = MODPATHS.keymap_png
+                if png and os.path.isfile(png):
+                    with open(png, "rb") as fh:
+                        self._send(200, fh.read(), "image/png")
+                else:
+                    self._send(404, {"error": "no keymap picture"})
             elif path == "/api/library":
                 with lock:
                     self._send(200, {
@@ -317,6 +367,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     }
                 write_setlists(data)
                 self._send(200, {"ok": True, "setlists": data})
+            elif path == "/api/settings":
+                changes = payload.get("changes") or {}
+                if not isinstance(changes, dict):
+                    self._send(200, {"ok": False, "error": "changes must be an object"})
+                    return
+                self._send(200, apply_settings(changes))
+            elif path == "/api/settings/resync":
+                self._send(200, rsmods_ini.resync(MODPATHS, payload.get("source")))
             elif path == "/api/quit":
                 self._send(200, {"ok": True})
                 threading.Thread(target=lambda: (time.sleep(0.4), os._exit(0)), daemon=True).start()

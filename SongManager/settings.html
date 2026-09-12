@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSMods Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f4f6f9; --surface:#fff; --surface-2:#eef2f7; --raised:#fff;
+  --ink:#131a22; --ink-2:#4a5663; --ink-3:#7b8794;
+  --rule:#dbe2ea; --rule-soft:#e8edf3;
+  --accent:#0b6fa8; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.10);
+  --on:#2f7d32; --on-bg:rgba(63,204,12,.14);
+  --off:#7b8794; --off-bg:rgba(123,135,148,.12);
+  --warn:#8a5a00; --warn-bg:rgba(226,193,2,.18);
+  --stop:#a52a33; --stop-bg:rgba(255,79,90,.12);
+  --shadow:0 1px 2px rgba(19,26,34,.05),0 10px 30px -22px rgba(19,26,34,.5);
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1319; --surface:#151c24; --surface-2:#1b232d; --raised:#1a222c;
+  --ink:#e8edf3; --ink-2:#a5b2bf; --ink-3:#74828f;
+  --rule:#26313f; --rule-soft:#1e2732;
+  --accent:#56c2fb; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.14);
+  --on:#7fd36a; --on-bg:rgba(63,204,12,.16);
+  --off:#74828f; --off-bg:rgba(116,130,143,.14);
+  --warn:#e0bc4a; --warn-bg:rgba(226,193,2,.14);
+  --stop:#ff8189; --stop-bg:rgba(255,79,90,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -22px rgba(0,0,0,.9);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --surface:#151c24; --surface-2:#1b232d; --raised:#1a222c;
+  --ink:#e8edf3; --ink-2:#a5b2bf; --ink-3:#74828f;
+  --rule:#26313f; --rule-soft:#1e2732;
+  --accent:#56c2fb; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.14);
+  --on:#7fd36a; --on-bg:rgba(63,204,12,.16);
+  --off:#74828f; --off-bg:rgba(116,130,143,.14);
+  --warn:#e0bc4a; --warn-bg:rgba(226,193,2,.14);
+  --stop:#ff8189; --stop-bg:rgba(255,79,90,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -22px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;
+  line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+
+.mast{padding:18px 22px 14px;border-bottom:1px solid var(--rule);background:var(--surface);
+  display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap}
+.mast h1{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:-.02em;margin:0;line-height:1}
+.mast .sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:5px;letter-spacing:.01em}
+.mast .right{display:flex;gap:8px;margin-left:auto;align-items:center}
+.iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;
+  padding:5px 9px;font-family:var(--mono);font-size:11px;cursor:pointer;line-height:1.4;text-decoration:none;display:inline-block}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+.banner{padding:9px 22px;font-size:13px;display:none;align-items:center;gap:10px;border-bottom:1px solid var(--rule)}
+.banner.show{display:flex}
+.banner.warn{background:var(--warn-bg);color:var(--warn)}
+.banner.stop{background:var(--stop-bg);color:var(--stop)}
+.banner.ok{background:var(--on-bg);color:var(--on)}
+
+.main{flex:1;overflow:auto;padding:18px 22px 40px;display:grid;gap:18px;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start}
+@media (max-width:1100px){.main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:4px;box-shadow:var(--shadow);min-width:0}
+.card.wide{grid-column:1 / -1}
+.card h2{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:-.01em;margin:0;
+  padding:12px 16px;border-bottom:1px solid var(--rule-soft);display:flex;align-items:baseline;gap:10px}
+.card h2 small{font-family:var(--body);font-weight:400;font-size:12px;color:var(--ink-3)}
+.card .body{padding:6px 16px 12px}
+
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;padding:8px 6px 6px;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
+td{padding:6px;border-bottom:1px solid var(--rule-soft);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.lbl{font-weight:500;white-space:nowrap;width:1%}
+td.help{color:var(--ink-3);font-size:12.5px}
+td.ctl{width:1%;white-space:nowrap}
+tr.chg td.lbl{color:var(--accent)}
+tr.chg td.lbl::before{content:"\25CF";margin-right:6px;font-size:9px;vertical-align:2px}
+
+.key{display:inline-flex;align-items:center;gap:8px;min-width:150px;padding:5px 9px;border:1px solid var(--rule);
+  border-radius:3px;background:var(--surface-2);cursor:pointer;font-family:var(--mono);font-size:12.5px;user-select:none}
+.key:hover{border-color:var(--accent-line)}
+.key .cap{font-family:var(--display);font-weight:600;font-size:13px;min-width:22px}
+.key .vk{color:var(--ink-3);font-size:10.5px}
+.key.blank .cap{color:var(--ink-3);font-weight:400;font-style:italic}
+.key.arm{outline:2px solid var(--accent-line);outline-offset:-1px;background:var(--accent-soft)}
+.key.dup{border-color:var(--stop);background:var(--stop-bg)}
+.clear{background:none;border:0;color:var(--ink-3);cursor:pointer;font-family:var(--mono);font-size:11px;padding:4px 6px}
+.clear:hover{color:var(--stop)}
+
+.sw{position:relative;width:38px;height:22px;border-radius:11px;background:var(--off-bg);border:1px solid var(--rule);
+  cursor:pointer;flex:none;transition:background .15s}
+.sw i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-3);transition:left .15s,background .15s}
+.sw[aria-checked="true"]{background:var(--on-bg);border-color:var(--on)}
+.sw[aria-checked="true"] i{left:18px;background:var(--on)}
+.sw-wrap{display:flex;align-items:center;gap:9px}
+.sw-wrap .v{font-family:var(--mono);font-size:11px;color:var(--ink-3);min-width:26px}
+
+input[type=number]{width:96px;padding:6px 8px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);
+  color:var(--ink);font-family:var(--mono);font-size:13px;text-align:right}
+input[type=number]:focus{outline:2px solid var(--accent-line);outline-offset:-1px;border-color:transparent}
+.unit{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-left:6px}
+.unset{font-family:var(--mono);font-size:10px;color:var(--warn);margin-left:6px}
+
+.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0}
+.st{padding:12px 16px;border-right:1px solid var(--rule-soft)}
+.st:last-child{border-right:0}
+.st .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.st .n{font-family:var(--display);font-weight:600;font-size:16px;line-height:1.2;margin-top:3px;word-break:break-word}
+.st .d{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:2px}
+.st.match .n{color:var(--on)} .st.stale .n{color:var(--warn)} .st.bad .n{color:var(--stop)}
+pre.log{margin:0;padding:10px 16px;font-family:var(--mono);font-size:11.5px;line-height:1.55;color:var(--ink-2);
+  white-space:pre-wrap;word-break:break-word;background:var(--surface-2);border-top:1px solid var(--rule-soft);max-height:200px;overflow:auto}
+pre.diff{margin:10px 0 0;padding:10px;font-family:var(--mono);font-size:11.5px;background:var(--surface-2);
+  border:1px solid var(--rule);border-radius:3px;max-height:320px;overflow:auto;white-space:pre}
+details summary{cursor:pointer;color:var(--ink-2);font-size:13px;padding:10px 16px;list-style:none}
+details summary::before{content:"\25B8";margin-right:8px;color:var(--ink-3)}
+details[open] summary::before{content:"\25BE"}
+details .body{padding-top:0}
+
+.actions{border-top:1px solid var(--rule);background:var(--surface);padding:12px 22px;
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
+.actions .summary{font-size:13px;color:var(--ink-2);min-width:220px}
+.actions .summary b{color:var(--ink)}
+.actions .hint{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.actions .hint kbd{border:1px solid var(--rule);border-radius:3px;padding:0 5px;background:var(--surface-2);color:var(--ink-2)}
+.btn{border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:3px;
+  padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--body)}
+.btn:hover:not(:disabled){border-color:var(--accent-line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08)}
+.btn.small{padding:5px 10px;font-size:12px}
+.spacer{margin-left:auto}
+:focus-visible{outline:2px solid var(--accent-line);outline-offset:1px}
+.keymap img{display:block;max-width:100%;border-top:1px solid var(--rule-soft)}
+.keymap .none{padding:16px;color:var(--ink-3);font-size:13px}
+.dupnote{color:var(--stop);font-size:12px;padding:6px 0 0}
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <div>
+    <h1>RSMods Settings</h1>
+    <div class="sub" id="path">RSMods.ini</div>
+  </div>
+  <div class="right">
+    <a class="iconbtn" href="/">song manager</a>
+    <button class="iconbtn" id="theme" title="Switch theme">theme</button>
+    <button class="iconbtn" id="reload" title="Re-read the ini and status from disk">reload</button>
+  </div>
+</div>
+
+<div class="banner" id="banner"><span id="banner-text"></span></div>
+
+<div class="main" id="main">
+
+  <div class="card wide" id="sync" style="display:none">
+    <h2>The two copies of RSMods.ini differ <small>saving is blocked until they match</small></h2>
+    <div class="body">
+      <p style="margin:8px 0;color:var(--ink-2)">The game's <code>RSMods.ini</code> and the repo snapshot <code>config\RSMods.ini</code> are not byte-identical. Usually this means <code>RSMods.exe</code> rewrote the game copy. Pick which one is right; the other is overwritten.</p>
+      <button class="btn small" id="sync-game">Game copy is right → update repo</button>
+      <button class="btn small" id="sync-repo">Repo copy is right → update game</button>
+      <pre class="diff" id="sync-diff"></pre>
+    </div>
+  </div>
+
+  <div class="card wide">
+    <h2>Status <small>read-only</small></h2>
+    <div class="status" id="status"></div>
+    <pre class="log" id="log"></pre>
+  </div>
+
+  <div class="card" data-group="practice"></div>
+  <div class="card" data-group="switches"></div>
+  <div class="card" data-group="tunables"></div>
+  <div class="card" data-group="overlay"></div>
+  <div class="card wide"><details data-group="other"></details></div>
+  <div class="card wide"><details data-group="audio"></details></div>
+
+  <div class="card wide keymap">
+    <h2>Practice keys on the Wooting 80HE <small id="keymap-sub">redrawn automatically after a keybind change</small></h2>
+    <div id="keymap"></div>
+  </div>
+</div>
+
+<div class="actions">
+  <div class="summary" id="summary">No changes.</div>
+  <span class="hint">in-game <kbd>Ctrl</kbd>+<kbd>A</kbd> reloads the ini &mdash; no restart</span>
+  <span class="spacer"></span>
+  <button class="btn" id="revert" disabled>Revert</button>
+  <button class="btn primary" id="save" disabled>Save to RSMods.ini</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------------- theme (shared key with the song manager) ---------------- */
+const savedTheme = localStorage.getItem('rsm-theme');
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+$('theme').onclick = () => {
+  const now = document.documentElement.dataset.theme;
+  const next = now === 'dark' ? 'light' : now === 'light' ? '' : 'dark';
+  if (next) { document.documentElement.dataset.theme = next; localStorage.setItem('rsm-theme', next); }
+  else { delete document.documentElement.dataset.theme; localStorage.removeItem('rsm-theme'); }
+};
+
+/* ---------------- physical key -> VK name (US layout) ---------------- */
+const CODE2VK = {
+  Escape:'VK_ESCAPE', Backquote:'VK_OEM_3', Minus:'VK_OEM_MINUS', Equal:'VK_OEM_PLUS', Backspace:'VK_BACK',
+  Tab:'VK_TAB', BracketLeft:'VK_OEM_4', BracketRight:'VK_OEM_6', Backslash:'VK_OEM_5', IntlBackslash:'VK_OEM_102',
+  CapsLock:'VK_CAPITAL', Semicolon:'VK_OEM_1', Quote:'VK_OEM_7', Enter:'VK_RETURN', NumpadEnter:'VK_RETURN',
+  ShiftLeft:'VK_SHIFT', ShiftRight:'VK_SHIFT', Comma:'VK_OEM_COMMA', Period:'VK_OEM_PERIOD', Slash:'VK_OEM_2',
+  ControlLeft:'VK_CONTROL', ControlRight:'VK_CONTROL', AltLeft:'VK_MENU', AltRight:'VK_MENU',
+  MetaLeft:'VK_LWIN', MetaRight:'VK_RWIN', ContextMenu:'VK_APPS', Space:'VK_SPACE',
+  Insert:'VK_INSERT', Delete:'VK_DELETE', Home:'VK_HOME', End:'VK_END', PageUp:'VK_PRIOR', PageDown:'VK_NEXT',
+  ArrowUp:'VK_UP', ArrowDown:'VK_DOWN', ArrowLeft:'VK_LEFT', ArrowRight:'VK_RIGHT',
+  PrintScreen:'VK_SNAPSHOT', ScrollLock:'VK_SCROLL', Pause:'VK_PAUSE', NumLock:'VK_NUMLOCK',
+  NumpadAdd:'VK_ADD', NumpadSubtract:'VK_SUBTRACT', NumpadMultiply:'VK_MULTIPLY', NumpadDivide:'VK_DIVIDE', NumpadDecimal:'VK_DECIMAL',
+};
+for (let i = 0; i < 26; i++) { const c = String.fromCharCode(65 + i); CODE2VK['Key' + c] = c; }
+for (let i = 0; i <= 9; i++) { CODE2VK['Digit' + i] = String(i); CODE2VK['Numpad' + i] = 'VK_NUMPAD' + i; }
+for (let i = 1; i <= 24; i++) CODE2VK['F' + i] = 'VK_F' + i;
+
+/* ---------------- state ---------------- */
+let schema = null;        // {fields:[...], groups:[...], labels:{VK:cap}}
+let disk = {};            // fid -> {value, present}
+let want = {};            // fid -> value (string)
+let armed = null;         // fid currently capturing a key
+let status = null;
+
+const label = vk => !vk ? '' : (schema.labels[vk] ?? (vk.length === 1 ? vk : vk.replace('VK_', '')));
+const fieldsIn = g => schema.fields.filter(f => f.group === g);
+const fid = f => f.section + '/' + f.key;
+
+/* ---------------- load ---------------- */
+async function load() {
+  const r = await fetch('/api/settings').then(r => r.json());
+  if (r.error) { flash('stop', r.error); return; }
+  schema = r.schema; disk = r.values; status = r.status;
+  want = {};
+  for (const f of schema.fields) want[fid(f)] = disk[fid(f)].value ?? '';
+  $('path').textContent = r.paths.gameIni + (r.paths.repoIni ? '   ·   ' + r.paths.repoIni : '   ·   repo snapshot not found');
+  renderSync(r.sync);
+  renderStatus();
+  renderGroups();
+  renderKeymap();
+  updateSummary();
+}
+
+/* ---------------- status strip ---------------- */
+function renderStatus() {
+  const s = status;
+  const dll = {
+    match:  ['match', 'installed = latest build', s.installed ? s.installed.sha256.slice(0, 12) + '…  ' + s.installed.mtime : ''],
+    stale:  ['stale', 'newer build not installed', s.built ? 'built ' + s.built.mtime + '  ·  installed ' + s.installed.mtime : ''],
+    'no-build': ['', 'no build in the repo', s.installed ? 'installed ' + s.installed.mtime : ''],
+    'no-install': ['bad', 'no xinput1_3.dll in the game folder', ''],
+  }[s.dllState];
+  const ver = s.version ? s.version.replace(/^RSMODS Version:\s*/, '').replace(/\.\s*DEBUG.*$/, '') : '—';
+  const asio = s.asio ? (s.asio.enabled === '1' ? `${s.asio.customBufferSize || '?'} samples`
+                                                 : 'disabled') : 'not installed';
+  const asioD = s.asio ? `${s.asio.bufferSizeMode} · in: ${s.asio.inputDriver || '—'} · out: ${s.asio.outputDriver || 'WASAPI'}` : '';
+  $('status').innerHTML = `
+    <div class="st ${dll[0]}"><div class="l">RSMods DLL</div><div class="n">${esc(dll[1])}</div><div class="d">${esc(dll[2])}</div></div>
+    <div class="st"><div class="l">Running build (debug log)</div><div class="n">${esc(ver)}</div><div class="d">first line of RSMods_debug.txt</div></div>
+    <div class="st"><div class="l">Rocksmith.ini LatencyBuffer</div><div class="n">${esc(s.latencyBuffer ?? '—')}</div><div class="d">2 is the floor on this PC; 4 is stock</div></div>
+    <div class="st"><div class="l">RS_ASIO buffer</div><div class="n">${esc(asio)}</div><div class="d">${esc(asioD)}</div></div>`;
+  $('log').textContent = s.logTail.length ? s.logTail.join('\n') : '(no RSMods_debug.txt)';
+}
+
+function renderSync(sync) {
+  const box = $('sync');
+  if (sync.repoFound && sync.inSync === false) {
+    box.style.display = '';
+    $('sync-diff').textContent = sync.diff;
+    $('save').dataset.blocked = '1';
+  } else {
+    box.style.display = 'none';
+    delete $('save').dataset.blocked;
+  }
+}
+
+/* ---------------- groups ---------------- */
+function renderGroups() {
+  for (const [g, title, sub] of schema.groups) {
+    const host = document.querySelector(`[data-group="${g}"]`);
+    const fields = fieldsIn(g);
+    const isDetails = host.tagName === 'DETAILS';
+    const head = isDetails
+      ? `<summary>${esc(title)} <small style="color:var(--ink-3)">· ${fields.length} keys${sub ? ' · ' + esc(sub) : ''}</small></summary>`
+      : `<h2>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ''}</h2>`;
+    host.innerHTML = head + `<div class="body"><table><tbody>${fields.map(row).join('')}</tbody></table>
+      <div class="dupnote" id="dup-${g}" style="display:none"></div></div>`;
+  }
+  markDuplicates();
+}
+
+function row(f) {
+  const id = fid(f), v = want[id], d = disk[id];
+  const chg = v !== (d.value ?? '');
+  const unset = !d.present ? `<span class="unset" title="No line in the ini yet; the DLL uses its default (${esc(f.default || 'blank')}). Saving adds the line.">not in ini · default ${esc(f.default || 'blank')}</span>` : '';
+  let ctl;
+  if (f.kind === 'key') {
+    ctl = `<span class="key ${v ? '' : 'blank'}" data-fid="${esc(id)}" tabindex="0" role="button" title="Click, then press a key. Esc cancels.">
+             <span class="cap">${v ? esc(label(v)) : 'unbound'}</span><span class="vk">${esc(v)}</span></span>
+           <button class="clear" data-clear="${esc(id)}" title="Unbind">clear</button>`;
+  } else if (f.kind === 'toggle') {
+    ctl = `<span class="sw-wrap"><span class="sw" role="switch" aria-checked="${v === 'on'}" data-fid="${esc(id)}" tabindex="0"><i></i></span><span class="v">${esc(v || 'off')}</span></span>`;
+  } else {
+    ctl = `<input type="number" data-fid="${esc(id)}" value="${esc(v)}" min="${f.min}" max="${f.max}" step="1"><span class="unit">${esc(f.unit)}</span>`;
+  }
+  return `<tr class="${chg ? 'chg' : ''}" data-row="${esc(id)}">
+    <td class="lbl">${esc(f.label)}</td>
+    <td class="ctl">${ctl}</td>
+    <td class="help">${esc(f.help)}${unset}</td>
+  </tr>`;
+}
+
+function rerow(id) {
+  const f = schema.fields.find(x => fid(x) === id);
+  const tr = document.querySelector(`tr[data-row="${CSS.escape(id)}"]`);
+  if (!tr) return;
+  const tmp = document.createElement('tbody');
+  tmp.innerHTML = row(f);
+  tr.replaceWith(tmp.firstElementChild);
+  markDuplicates();
+  updateSummary();
+}
+
+function markDuplicates() {
+  const byVk = {};
+  for (const f of schema.fields) if (f.kind === 'key' && want[fid(f)]) (byVk[want[fid(f)]] ??= []).push(f);
+  document.querySelectorAll('.key').forEach(k => k.classList.remove('dup'));
+  const notes = {};
+  for (const [vk, fs] of Object.entries(byVk)) {
+    if (fs.length > 1) {
+      for (const f of fs) {
+        document.querySelector(`.key[data-fid="${CSS.escape(fid(f))}"]`)?.classList.add('dup');
+        (notes[f.group] ??= []).push(`${label(vk)} is bound to ${fs.map(x => x.label).join(' and ')}`);
+      }
+    }
+    if (vk === 'A') for (const f of fs) (notes[f.group] ??= []).push(`A is also Ctrl+A, the reload-settings chord`);
+  }
+  for (const [g] of schema.groups) {
+    const el = $('dup-' + g);
+    const list = [...new Set(notes[g] || [])];
+    el.style.display = list.length ? '' : 'none';
+    el.textContent = list.join(' · ');
+  }
+}
+
+/* ---------------- key capture ---------------- */
+document.addEventListener('click', e => {
+  const k = e.target.closest('.key');
+  if (k) { arm(k.dataset.fid); return; }
+  const c = e.target.closest('[data-clear]');
+  if (c) { want[c.dataset.clear] = ''; rerow(c.dataset.clear); return; }
+  const sw = e.target.closest('.sw');
+  if (sw) { want[sw.dataset.fid] = want[sw.dataset.fid] === 'on' ? 'off' : 'on'; rerow(sw.dataset.fid); return; }
+  if (armed && !e.target.closest('.key')) disarm();
+});
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input[type=number]')) return;
+  const focused = document.activeElement;
+  if (!armed && focused && focused.classList?.contains('sw') && (e.key === ' ' || e.key === 'Enter')) {
+    e.preventDefault(); focused.click(); return;
+  }
+  if (!armed && focused && focused.classList?.contains('key') && (e.key === ' ' || e.key === 'Enter')) {
+    e.preventDefault(); arm(focused.dataset.fid); return;
+  }
+  if (!armed) return;
+  e.preventDefault(); e.stopPropagation();
+  if (e.code === 'Escape') { disarm(); return; }
+  const vk = CODE2VK[e.code];
+  if (!vk) { flash('warn', `No VK name for physical key "${e.code}" — pick another.`); return; }
+  const id = armed; disarm();
+  want[id] = vk; rerow(id);
+}, true);
+document.addEventListener('input', e => {
+  const n = e.target.closest('input[type=number][data-fid]');
+  if (!n) return;
+  want[n.dataset.fid] = n.value;
+  const tr = n.closest('tr');
+  tr.classList.toggle('chg', n.value !== (disk[n.dataset.fid].value ?? ''));
+  updateSummary();
+});
+function arm(id) {
+  disarm();
+  armed = id;
+  const el = document.querySelector(`.key[data-fid="${CSS.escape(id)}"]`);
+  el.classList.add('arm'); el.querySelector('.cap').textContent = 'press a key…'; el.querySelector('.vk').textContent = 'Esc to cancel';
+}
+function disarm() {
+  if (!armed) return;
+  const id = armed; armed = null;
+  rerow(id);
+}
+
+/* ---------------- save / revert ---------------- */
+function pending() {
+  const out = {};
+  for (const f of schema.fields) { const id = fid(f); if (want[id] !== (disk[id].value ?? '')) out[id] = want[id]; }
+  return out;
+}
+function updateSummary() {
+  const p = pending(), n = Object.keys(p).length;
+  const blocked = !!$('save').dataset.blocked;
+  $('summary').innerHTML = n ? `<b>${n}</b> change${n > 1 ? 's' : ''} not yet saved.` : 'No changes.';
+  $('save').disabled = !n || blocked;
+  $('revert').disabled = !n;
+}
+$('revert').onclick = () => { for (const f of schema.fields) want[fid(f)] = disk[fid(f)].value ?? ''; renderGroups(); updateSummary(); };
+$('save').onclick = async () => {
+  const changes = pending();
+  $('save').disabled = true;
+  const r = await fetch('/api/settings', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({changes})}).then(r => r.json());
+  if (!r.ok) {
+    if (r.fieldErrors) flash('stop', Object.entries(r.fieldErrors).map(([k, v]) => `${k.split('/')[1]}: ${v}`).join(' · '));
+    else flash('stop', r.error || 'Save failed');
+    if (r.diff) renderSync({repoFound: true, inSync: false, diff: r.diff});
+    updateSummary();
+    return;
+  }
+  const keysChanged = Object.keys(changes).some(id => { const f = schema.fields.find(x => fid(x) === id); return f && f.kind !== 'toggle'; });
+  let msg = `Saved ${Object.keys(changes).length} change(s) to ${r.wrote.length} file(s). Press Ctrl+A in the game to pick them up.`;
+  if (r.keymap) msg += r.keymap.ok ? ' Keymap picture redrawn.' : ` Keymap picture NOT redrawn: ${r.keymap.output || 'unknown error'}`;
+  flash(r.keymap && !r.keymap.ok ? 'warn' : 'ok', msg, 9000);
+  await load();
+  if (keysChanged) renderKeymap(true);
+};
+
+$('sync-game').onclick = () => resync('game');
+$('sync-repo').onclick = () => resync('repo');
+async function resync(source) {
+  const r = await fetch('/api/settings/resync', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({source})}).then(r => r.json());
+  flash(r.ok ? 'ok' : 'stop', r.ok ? `Copied the ${source} copy over the other. Back in sync.` : (r.error || 'failed'));
+  await load();
+}
+$('reload').onclick = load;
+
+/* ---------------- keymap picture ---------------- */
+function renderKeymap(bust) {
+  const host = $('keymap');
+  if (!status.keymapPng) { host.innerHTML = '<div class="none">No picture yet — it is drawn into the repo\'s docs\\ folder after the first keybind save.</div>'; return; }
+  host.innerHTML = `<img src="/api/keymap.png?t=${bust ? Date.now() : 0}" alt="Practice keys on a Wooting 80HE">`;
+}
+
+/* ---------------- banner ---------------- */
+let bannerTimer;
+function flash(kind, text, ms = 6000) {
+  const el = $('banner');
+  el.className = 'banner show ' + kind;
+  $('banner-text').textContent = text;
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => { el.className = 'banner'; }, ms);
+}
+
+/* ---------------- heartbeat (keeps the server's idle watchdog alive) ---------------- */
+setInterval(() => fetch('/api/status').catch(() => {}), 20000);
+fetch('/api/status').catch(() => {});
+
+load();
+</script>
+</body>
+</html>

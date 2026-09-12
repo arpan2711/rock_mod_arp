@@ -37,8 +37,11 @@ Attack overlay line.
 number in `_RSMODS_VERSION` (`dllmain.cpp:17`) on every build that gets installed, so the
 log always says which build is running.
 
-**PICK UP HERE — next session: the Settings page in Song Manager (backlog #13, spec below).**
-Then #12 (live scrub while paused) and #11 (menu tone, decision pending).
+**Settings page in Song Manager — built 12 Sep (backlog #13).** Open Song Manager → *mod settings*,
+or `http://127.0.0.1:8734/settings`. Edits `RSMods.ini` in place and keeps `config/RSMods.ini` in
+step; `RSMods.exe` is no longer needed for anything we use. Details in §Mod settings page.
+
+**PICK UP HERE — next session: #12 (live scrub while paused), then #11 (menu tone, decide A/B).**
 
 ---
 
@@ -192,7 +195,7 @@ is its own commit, so a failing one can be reverted individually with
 |---|---|
 | `RSMods-src/` | RSMods 1.2.7.4 fork source (`keremcanb/RSMods_for_Cracked_Rocksmith_2014` @ `9a63acd`) with the 1.2.8.x fixes ported in |
 | `scripts/` | `build-dll.ps1`, `install-dll.ps1`, `restore-dll.ps1`, plus the game-folder batch files |
-| `SongManager/` | Local web app for enabling/disabling songs in `dlc\` (pure-stdlib Python) |
+| `SongManager/` | Local web app: song enable/disable in `dlc\` **and the RSMods settings page** (pure-stdlib Python). Deployed by copying to `Y:\...\SongManager\` |
 | `config/` | Snapshots of the deployed `RSMods.ini`, `Rocksmith.ini`, `steam_emu.ini` |
 | `backups/` | DLL backups made by `install-dll.ps1` — **untracked, do not delete** |
 | `ROCKSMITH-PROJECT-NOTES.md` | Full setup and troubleshooting history |
@@ -476,18 +479,58 @@ Ranked for a practice tool. Effort is a guess.
 | 3 | **Auto speed ladder** — pass counter and per-pass accuracy are **done (12 Sep)**; left: after N passes at or above X %, bump speed by `RRSpeedInterval` automatically | small now | `loopPass`, `lastPassAccuracy`, `RiffRepeater::SetSpeed` |
 | 4 | ~~**Port `DisplayCurrentAccuracy`**~~ — **done 11 Sep 2026**, see §Accuracy overlay | — | `ReadCurrentAccuracy()` in `dllmain.cpp` |
 | 5 | **Practice log** — CSV of `timestamp, song key, speed, loop bounds, accuracy`; Song Manager shows last-practised / minutes per song (the thing the profile decrypt failure blocked) | small DLL, medium SongManager | song-key change detection at `dllmain.cpp:107` |
-| 6 | **GUI checkbox for `PreventMidSongPause`** added programmatically in `UI.cs` | small-medium | closes the "RSMods.exe drops the key" caveat |
+| 6 | ~~**GUI checkbox for `PreventMidSongPause`**~~ — **superseded by #13**: the settings page owns it, `RSMods.exe` is out of the loop | — | — |
 | 7 | ~~**Hit-streak / miss-streak overlay**~~ — **done 11 Sep 2026**, see §Accuracy and streak overlay | — | `ReadNoteStats()` in `dllmain.cpp` |
 | 8 | **Strict loop** — miss a note inside a loop and it rewinds to the loop start; toggle key so it is opt-in | small-medium | `totalNotesMissed` delta per frame + the existing loop seek at `dllmain.cpp` |
 | 9 | **Switch the MG-300's preset from the game** — the MK2 takes MIDI over USB: CC#60 (or #73) on channel 1, value = preset number selects a preset; program change does *not* work and there is no bypass CC, so "mute the pedal" = switch to a user-made silent preset. Two uses: (a) make `\` also flip the pedal between your playing preset and a silent one, closing the "physical amp still makes noise" gap; (b) per-song pedal preset, the way `AutoTuneForSong` already sends tuning pedals a program change over WinMM MIDI out | medium; USB-MIDI on this pedal is reported as fiddly | `Mods/Midi.cpp` (already has a MIDI-out device picker + send), `ToggleAmpSourceKey` handler |
 | 10 | ~~**`LatencyBuffer=1`**~~ — tried 12 Sep, crackles; 2 is the floor | — | `Rocksmith.ini` |
-| 13 | **Settings page in Song Manager** — replaces `RSMods.exe` as the editor. **Next up; full spec below the table.** | an evening | `SongManager/server.py` (+ `ui.html`), `docs/keymap-wooting-80he.py` |
+| 13 | ~~**Settings page in Song Manager**~~ — **done 12 Sep**, see §Mod settings page. Spec kept below for the record | — | `SongManager/settings.html`, `rsmods_ini.py` |
 | 12 | **Live scrub while paused** — try `SeekOnEvent` on the paused voice so the highway redraws at the new spot while paused, instead of only on resume. Keep the deferred seek as the fallback if the highway does not follow | small | pause handler in `dllmain.cpp` |
 | 11 | **Menu / tuner tone** — the game's out-of-song tone is a hard-wired high-gain preset and Rocksmith has no default-tone setting (Ubisoft confirmed on the Steam forums). Two ways round it, decision pending: **A** clean tone saved to Tone Designer slot 2–4, pressed by hand after every song; **B** (recommended) `MuteGameAmpOutsideSongs=on` — hold `Mixer_Player1` at 0 whenever `currentMenu` is not a song mode, so menus / tuner / lessons are pedal-only and the game amp returns when a song starts, respecting the `'` toggle. ~20 lines on the amp-toggle plumbing | small | `VolumeControl::MutePlayer`, `songModes`, the per-frame block in `Hook_EndScene` |
 
-Suggested order: **13 first** (spec below), then 12, then 11 (decide A/B), then 3 → 8 → 5 as the practice arc (7 is done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
+Suggested order: 12, then 11 (decide A/B), then 3 → 8 → 5 as the practice arc (7 and 13 are done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 2 whenever. Any new ini key a future mod adds gets a row in `rsmods_ini.FIELDS` so the page can own it.
 
-### #13 — Settings page in Song Manager (the plan, as agreed 12 Sep)
+## Mod settings page (built 12 Sep)
+
+`/settings` on the Song Manager server. Same launcher (`Song Manager.bat`), same window;
+the song list page has a *mod settings* link top-right. Stdlib only.
+
+| Piece | File |
+|---|---|
+| Page | `SongManager/settings.html` |
+| Schema, writer, status, repo discovery | `SongManager/rsmods_ini.py` |
+| Routes | `server.py`: `GET /settings`, `GET/POST /api/settings`, `POST /api/settings/resync`, `GET /api/keymap.png` |
+| Writer tests (17) | `py -3 SongManager	est_rsmods_ini.py` — round-trips `config/RSMods.ini` byte-for-byte |
+| Picture | `docs/keymap-wooting-80he.py --ini <RSMods.ini>` — now driven from the ini, re-run by the page after any key or tunable change |
+
+**What it owns** (43 fields): the practice keys, the stock keybinds, the audio keybinds,
+the overlay switches, the practice-gate switches (`AllowLooping`, `AllowRewind`,
+`RRSpeedAboveOneHundred`, `LinearRiffRepeater`, `PreventMidSongPause`, `VolumeControl`) and
+the four tunables. Nothing else in the ini is touched. Keys are captured by pressing them
+(`event.code` → `VK_` name, validated against the 175 names in `DLL/Settings.hpp`); two
+features on one key are flagged; `A` warns about the Ctrl+A reload chord.
+
+**The writer's rules.** Line-level edits only: an existing `key = value` keeps its exact
+prefix and spacing; a key with no line yet is appended at the end of its section (this is
+how `PreventMidSongPause` gets its line the first time it is turned on); nothing is ever
+removed or reordered; CRLF is preserved. Both copies — the game's `RSMods.ini` and
+`config/RSMods.ini` — are written together, atomically. **If the two differ before a save,
+saving is blocked** and the page shows the diff with two buttons: *game copy is right* or
+*repo copy is right*. That is the guard against `RSMods.exe` having rewritten the game copy
+behind our back.
+
+**Status strip** (read-only): installed DLL vs latest build (`match` / `newer build not
+installed`), the `RSMODS Version:` line from `RSMods_debug.txt`, `LatencyBuffer`,
+RS_ASIO buffer / drivers, last 10 log lines.
+
+**Deploy:** the server runs from `Y:\...\SongManager\`, which is a copy. After editing in the
+repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html` over. The repo is found
+from there via `ROCK_MOD_ARP` env, else the parent of the script, else `~ock_mod_arp`.
+
+**Not done:** editing `Rocksmith.ini` / `RS_ASIO.ini` (display only, as specified). Reload
+in-game is still `Ctrl+A`; the page says so.
+
+### #13 — the original spec (as agreed 12 Sep, kept for the record)
 
 **Why:** `RSMods.exe` only knows the 1.2.7.4 keys and rewrites `RSMods.ini` from its own list
 when it saves, so every key we added (`ToggleAmpSourceKey`, `PauseSongKey`, `ForwardKey`,

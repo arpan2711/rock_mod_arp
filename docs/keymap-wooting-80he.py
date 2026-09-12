@@ -1,13 +1,41 @@
 # -*- coding: utf-8 -*-
-"""Render the Rocksmith practice shortcuts onto a Wooting 80HE (ANSI) keyboard picture.
+r"""Render the Rocksmith practice shortcuts onto a Wooting 80HE (ANSI) keyboard picture.
 
-Output: docs/keymap-wooting-80he.png. Re-run after changing a keybind in RSMods.ini.
-Keys and behaviour come from RSMods.ini [Keybinds] / [Audio Keybindings] and dllmain.cpp.
+Usage:  py -3 docs\keymap-wooting-80he.py [--ini <RSMods.ini>] [--out <png>]
+
+Defaults: ..\config\RSMods.ini in, docs\keymap-wooting-80he.png out. The Settings page
+in Song Manager runs this after every keybind or tunable change, so the picture never
+drifts from the ini. Which key does what is read from the ini; what each feature is
+called (FEATURES) and the game's own fixed keys (FIXED) live here.
 """
+import argparse
 import os
+import sys
+
 from PIL import Image, ImageDraw, ImageFont
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'keymap-wooting-80he.png')
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
+sys.path.insert(0, os.path.join(REPO, 'SongManager'))
+import rsmods_ini  # noqa: E402  - one source of truth for VK -> keycap labels
+
+ap = argparse.ArgumentParser()
+ap.add_argument('--ini', default=os.path.join(REPO, 'config', 'RSMods.ini'))
+ap.add_argument('--out', default=os.path.join(HERE, 'keymap-wooting-80he.png'))
+args = ap.parse_args()
+
+with open(args.ini, 'rb') as fh:
+    INI = fh.read().decode('utf-8', 'replace')
+
+def ini_get(section, key, default=''):
+    v = rsmods_ini.get(INI, section, key)
+    return v.strip() if v is not None else default
+
+def ini_int(section, key, default):
+    try:
+        return int(ini_get(section, key, str(default)))
+    except ValueError:
+        return default
 
 # ---- geometry (1u = one key) --------------------------------------------------------
 U = 124         # px per key unit
@@ -35,21 +63,31 @@ GROUPS = {
     'game':   ((230, 230, 235), 'Rocksmith itself'),
 }
 
-# ---- shortcuts (what gets painted on the keys) ---------------------------------------
-# key label -> (group, primary text, ctrl text)
-SHORTCUTS = {
-    '-':         ('speed',  'Speed\n-2%', None),
-    '=':         ('speed',  'Speed\n+2%', None),
-    'Backspace': ('rewind', 'Back 5 s', None),
-    'Delete':    ('rewind', 'Fwd 5 s', None),
-    'P':         ('rewind', 'Pause /\nresume', None),
-    '[':         ('loop',   'Loop\nstart', None),
-    ']':         ('loop',   'Loop\nend', None),
-    '\\':        ('loop',   'Clear loop', None),
-    "'":         ('amp',    'Game amp /\npedal only', None),
-    'A':         ('mod',    None,         'Ctrl:\nreload ini'),
-    'Esc':       ('game',   'Pause', None),
-    'Enter':     ('game',   'Tuner screen:\nCalibrate', None),
+# ---- what each ini key means on the picture ------------------------------------------
+step = ini_int('Mod Settings', 'RRSpeedInterval', 2)
+rew_ms = ini_int('Mod Settings', 'RewindBy', 5000)
+fwd_ms = ini_int('Mod Settings', 'ForwardBy', 5000)
+lead_ms = ini_int('Mod Settings', 'LoopingLeadUp', 0)
+secs = lambda ms: ('%g s' % (ms / 1000.0))
+
+FEATURES = [
+    # (section, ini key, group, keycap text)
+    ('Keybinds', 'RRSpeedDownKey', 'speed',  'Speed\n-%d%%' % step),
+    ('Keybinds', 'RRSpeedKey',     'speed',  'Speed\n+%d%%' % step),
+    ('Keybinds', 'RewindKey',      'rewind', 'Back %s' % secs(rew_ms)),
+    ('Keybinds', 'ForwardKey',     'rewind', 'Fwd %s' % secs(fwd_ms)),
+    ('Keybinds', 'PauseSongKey',   'rewind', 'Pause /\nresume'),
+    ('Keybinds', 'LoopStartKey',   'loop',   'Loop\nstart'),
+    ('Keybinds', 'LoopEndKey',     'loop',   'Loop\nend'),
+    ('Keybinds', 'LoopClearKey',   'loop',   'Clear loop'),
+    ('Audio Keybindings', 'ToggleAmpSourceKey', 'amp', 'Game amp /\npedal only'),
+]
+
+# Hard-wired in the DLL or the game; not in the ini.
+FIXED = {
+    'A':     ('mod',  None,                      'Ctrl:\nreload ini'),
+    'Esc':   ('game', 'Pause',                   None),
+    'Enter': ('game', 'Tuner screen:\nCalibrate', None),
 }
 
 # ---- Wooting 80HE ANSI layout: rows of (label, width_u, x_offset_u_before) ------------
@@ -70,10 +108,40 @@ ROWS = [
     [('Ctrl',1.25,0),('Win',1.25,0),('Alt',1.25,0),('',6.25,0),('Alt',1.25,0),('Fn',1.25,0),('Ctrl',1.25,0),
      ('\u2190',1,.5),('\u2193',1,0),('\u2192',1,0)],
 ]
+ON_BOARD = {label for row in ROWS for label, _, _ in row}
+
+# VK name -> the label used on this board. Space is the blank 6.25u cap.
+def board_label(vk):
+    lab = rsmods_ini.vk_label(vk)
+    return {'Space': '', 'L Shift': 'Shift', 'R Shift': 'Shift', 'L Ctrl': 'Ctrl', 'R Ctrl': 'Ctrl',
+            'L Alt': 'Alt', 'R Alt': 'Alt'}.get(lab, lab)
+
+# ---- build the shortcut table from the ini -------------------------------------------
+SHORTCUTS = {label: list(v) for label, v in FIXED.items()}   # label -> [group, primary, ctrl]
+bound = {}          # ini key -> keycap label (or '' if unbound), for the notes
+off_board = []      # (keycap label, text) for keys this keyboard does not have
+
+for section, key, group, text in FEATURES:
+    vk = ini_get(section, key)
+    lab = board_label(vk) if vk else ''
+    bound[key] = lab if vk else ''
+    if not vk:
+        continue
+    if lab not in ON_BOARD:
+        off_board.append((lab, text.replace('\n', ' ')))
+        continue
+    if lab in SHORTCUTS:
+        SHORTCUTS[lab][1] = (SHORTCUTS[lab][1] + ' /\n' if SHORTCUTS[lab][1] else '') + text
+    else:
+        SHORTCUTS[lab] = [group, text, None]
+
+def name(key):
+    """Keycap label for the notes, or '(unbound)'."""
+    return bound.get(key) or '(unbound)'
 
 def font(size, bold=False):
-    for name in (('seguisb.ttf' if bold else 'segoeui.ttf'), ('arialbd.ttf' if bold else 'arial.ttf')):
-        p = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts', name)
+    for fname in (('seguisb.ttf' if bold else 'segoeui.ttf'), ('arialbd.ttf' if bold else 'arial.ttf')):
+        p = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts', fname)
         if os.path.exists(p):
             return ImageFont.truetype(p, size)
     return ImageFont.load_default()
@@ -133,28 +201,34 @@ ly = Y0 + board_h + 50
 lx = X0
 d.text((lx, ly), 'Legend', font=F_LEG, fill=TEXT)
 ly += 30
-for name in ('loop', 'speed', 'rewind', 'amp', 'mod', 'game'):
-    col, txt = GROUPS[name]
+for gname in ('loop', 'speed', 'rewind', 'amp', 'mod', 'game'):
+    col, txt = GROUPS[gname]
     d.rounded_rectangle((lx, ly + 4, lx + 26, ly + 26), radius=6, fill=col)
     d.text((lx + 38, ly), txt, font=F_LEG, fill=TEXT)
     ly += 32
 
-# notes, right of the legend
+# notes, right of the legend - every key name comes from the ini
+ls, le, lc = name('LoopStartKey'), name('LoopEndKey'), name('LoopClearKey')
+su, sd = name('RRSpeedKey'), name('RRSpeedDownKey')
+pa, rw, fw = name('PauseSongKey'), name('RewindKey'), name('ForwardKey')
+amp = name('ToggleAmpSourceKey')
 nx = X0 + 520
 ny = Y0 + board_h + 50
 notes = [
-    'Workflow:  [ and ] around a few bars  ->  tap - to slow it down  ->  work it  ->  tap = past 100%',
-    'so real tempo feels easy afterwards  ->  \\ clears the loop.',
-    'P pauses the song in place, no menu. While paused, Backspace / Delete move the resume point (shown top-centre); P resumes there.',
+    'Workflow:  %s and %s around a few bars  ->  tap %s to slow it down  ->  work it  ->  tap %s past 100%%' % (ls, le, sd, su),
+    'so real tempo feels easy afterwards  ->  %s clears the loop.' % lc,
+    '%s pauses the song in place, no menu. While paused, %s / %s move the resume point (shown top-centre); %s resumes there.' % (pa, rw, fw, pa),
     'Loop and speed keys work in Learn A Song, Non-Stop Play and Riff Repeater; pause / scrub only while a song is playing.',
-    'Tunables in RSMods.ini:  RewindBy / ForwardBy = 5000 ms,  RRSpeedInterval = 2 %,  LoopingLeadUp = 2000 ms run-in before the loop.',
-    '\'  mutes the game\'s guitar tone only - the backing track keeps playing. "PEDAL ONLY" shows top-left while muted.',
+    'Tunables in RSMods.ini:  RewindBy / ForwardBy = %d / %d ms,  RRSpeedInterval = %d %%,  LoopingLeadUp = %d ms run-in before the loop.' % (rew_ms, fwd_ms, step, lead_ms),
+    '%s  mutes the game\'s guitar tone only - the backing track keeps playing. "PEDAL ONLY" shows top-left while muted.' % amp,
     'Top-right overlay while playing:  song timer  /  accuracy %  /  "12 in a row, best 37" streak.',
-    'Ctrl + [ or ] still clears the loop and Ctrl + = still slows down, for muscle memory. Delete is the only nav-block key in use.',
+    'Ctrl + %s or %s still clears the loop and Ctrl + %s still slows down, for muscle memory.' % (ls, le, su),
 ]
+if off_board:
+    notes.append('Not on this keyboard:  ' + ',  '.join('%s = %s' % (lab, txt) for lab, txt in off_board))
 for t in notes:
     d.text((nx, ny), t, font=F_NOTE, fill=TEXT_DIM)
     ny += 30
 
-img.save(OUT)
-print('wrote', OUT, img.size)
+img.save(args.out)
+print('wrote', args.out, img.size, 'from', args.ini)
