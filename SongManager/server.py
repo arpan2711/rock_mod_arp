@@ -295,6 +295,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif path == "/exercises.js":
                 with open(os.path.join(HERE, "exercises.js"), "rb") as fh:
                     self._send(200, fh.read(), "application/javascript; charset=utf-8")
+            elif path == "/fretboard.js":
+                with open(os.path.join(HERE, "fretboard.js"), "rb") as fh:
+                    self._send(200, fh.read(), "application/javascript; charset=utf-8")
             elif path == "/api/settings":
                 self._send(200, settings_payload())
             elif path == "/api/keymap.png":

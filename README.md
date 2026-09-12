@@ -533,7 +533,7 @@ RS_ASIO buffer / drivers, last 10 log lines.
 
 **Deploy:** the server runs from `Y:\...\SongManager\`, which is a copy. After editing in the
 repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html`, `notes.html`, `notes-dsp.js`,
-`exercises.js` over. The repo is found
+`exercises.js`, `fretboard.js` over. The repo is found
 from there via `ROCK_MOD_ARP` env, else the parent of the script, else `~\rock_mod_arp`.
 
 **Not done:** editing `Rocksmith.ini` / `RS_ASIO.ini` (display only, as specified). Reload
@@ -577,13 +577,23 @@ Below the readout. Pick one, *Start listening*, *Begin*, play. The panel shows t
 (note plus suggested string·fret), the whole sequence as chips that light as you go, and
 `played / total · wrong · time · notes/min · accuracy`. A correct note advances; a wrong one is
 counted and the cursor stays; the note you just played, heard again as it rings, is ignored.
-Optional metronome click (through the PC speakers) and an *any octave counts* mode.
+An *any octave counts* mode, and a **metronome** button with a bpm box (own audio context, so it
+runs with or without listening or an exercise; accent on 1 of 4; the button blinks on the beat).
+
+**Fretboard diagram** (added 12 Sep) under the target line: every note of the exercise lit on a
+15-fret board with its name, root filled, the note to play next green and pulsing, notes already
+played faded. Drawn to printed-chart conventions so it needs no decoding: nut on the left, high e
+on top, string names left, fret numbers below, inlay dots at 3 5 7 9 15 and a double at 12,
+open-string notes just left of the nut. Checked with headless-Edge screenshots in both themes.
+Preview any state without a guitar: `/notes?ex=<id>&at=<index>&theme=dark`.
 
 | Piece | File |
 |---|---|
 | Catalogue + runner | `SongManager/exercises.js` — shapes are *generated* from interval formulas inside a fret window on standard tuning, so fingerings are the standard position shapes by construction |
 | Tests (51) | `node SongManager\test_exercises.js` — pins the well-known shapes to their textbook fingerings (box 1 = `E5 E8 A5 A7 D5 D7 G5 G7 B5 B8 e5 e8`, the G major E-shape, the harmonic-minor stretch on `D6`/`B9`, the A barre arpeggio `E5 A4 A7 D7 G6 B5 e5`), catalogue invariants (no consecutive repeats, frets 0–15, up-then-down), and the runner |
-| Route | `server.py`: `GET /exercises.js` |
+| Fretboard | `SongManager/fretboard.js` — pure function `FRETBOARD.svg(seq, {index, root})` → SVG string; colours via CSS classes in `notes.html` |
+| Tests (21) | `node SongManager\test_fretboard.js` — board geometry (6 strings, 15 frets, e-B-G-D-A-E top to bottom, inlays), one circle per position, root marking, open strings left of the nut, now/todo/done states through a run |
+| Route | `server.py`: `GET /exercises.js`, `GET /fretboard.js` |
 
 **What is in it, and where it comes from**
 

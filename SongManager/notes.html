@@ -125,6 +125,31 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
 .ex-strip .c.now{border-color:var(--accent-line);background:var(--accent-soft)} .ex-strip .c.now b{color:var(--accent)}
 .ex-stats{font-family:var(--mono);font-size:12px;color:var(--ink-2);min-height:18px}
 .ex-stats b{color:var(--ink);font-weight:500}
+#ex-metro.on{border-color:var(--on);color:var(--on)}
+#ex-metro.beat{background:var(--on-bg)}
+/* ---------- fretboard ---------- */
+.ex-board{max-width:1100px}
+.fb{width:100%;height:auto;display:block;font-family:var(--display)}
+.fb-board{fill:var(--surface-2);stroke:var(--rule)}
+.fb-inlay{fill:var(--rule)}
+.fb-fret{stroke:var(--rule);stroke-width:2}
+.fb-nut{stroke:var(--ink-3);stroke-width:6}
+.fb-string{stroke:var(--ink-3);opacity:.75}
+.fb-sname{fill:var(--ink-2);font:500 12px var(--mono)}
+.fb-num{fill:var(--ink-3);font:400 11px var(--mono);text-anchor:middle}
+.fb-n circle{fill:var(--surface);stroke:var(--accent);stroke-width:1.8}
+.fb-n text{fill:var(--ink);font:700 14px var(--display);text-anchor:middle}
+.fb-n.root circle{fill:var(--accent)} .fb-n.root text{fill:var(--surface)}
+.fb-n.done{opacity:.28}
+.fb-n.now circle{fill:var(--on);stroke:var(--on);stroke-width:2.5} .fb-n.now text{fill:#fff}
+.fb-n.now .fb-pulse{fill:none;stroke:var(--on);stroke-width:2;animation:fbpulse 1s ease-out infinite}
+@keyframes fbpulse{from{r:14.5;opacity:.9}to{r:28;opacity:0}}
+.fb-legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.fb-legend span{display:flex;align-items:center;gap:6px}
+.fb-legend i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--accent);background:var(--surface);display:inline-block}
+.fb-legend i.root{background:var(--accent)}
+.fb-legend i.now{background:var(--on);border-color:var(--on)}
+.fb-legend i.done{opacity:.28}
 </style>
 </head>
 <body>
@@ -175,13 +200,15 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
   <div class="ex-head">
     <label>exercise<select id="ex-pick"></select></label>
     <label>&nbsp;<span class="ex-opts"><input type="checkbox" id="ex-anyoct"> any octave counts</span></label>
-    <label>&nbsp;<span class="ex-opts"><input type="checkbox" id="ex-metro"> click at <input type="number" id="ex-bpm" min="30" max="240" value="72"> bpm</span></label>
+    <label>&nbsp;<span class="ex-opts"><button class="btn" id="ex-metro" title="Click through the PC speakers; works with or without an exercise running">metronome</button><input type="number" id="ex-bpm" min="30" max="240" value="72"> bpm</span></label>
     <span class="spacer"></span>
     <button class="btn primary" id="ex-begin">Begin</button>
     <button class="btn" id="ex-stop" disabled>Stop</button>
   </div>
   <div class="ex-desc" id="ex-desc"></div>
   <div class="ex-target" id="ex-target">pick an exercise, press Start listening, then Begin</div>
+  <div class="ex-board" id="ex-board"></div>
+  <div class="fb-legend"><span><i class="root"></i>root</span><span><i></i>in this exercise</span><span><i class="now"></i>play next</span><span><i class="done"></i>played</span></div>
   <div class="ex-strip" id="ex-strip"></div>
   <div class="ex-stats" id="ex-stats"></div>
 </div>
@@ -194,6 +221,7 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
 </div>
 
 <script src="/exercises.js"></script>
+<script src="/fretboard.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -202,7 +230,7 @@ const noteName = m => NAMES[((m % 12) + 12) % 12];
 const octave = m => Math.floor(m / 12) - 1;
 
 /* theme, shared with the other pages */
-const savedTheme = localStorage.getItem('rsm-theme');
+const savedTheme = new URLSearchParams(location.search).get('theme') || localStorage.getItem('rsm-theme');
 if (savedTheme) document.documentElement.dataset.theme = savedTheme;
 $('theme').onclick = () => {
   const now = document.documentElement.dataset.theme;
@@ -297,7 +325,6 @@ function wireTestTone() {
 }
 
 async function stop() {
-  metroStop();
   if (osc) { try { osc.stop(); } catch (_) {} osc = oscGain = null; }
   if (source) { try { source.disconnect(); } catch (_) {} source = null; }
   if (worklet) { try { worklet.disconnect(); } catch (_) {} worklet = null; }
@@ -402,16 +429,18 @@ if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) navigator
 
 /* ---------------- exercises ---------------- */
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const EXS = window.GUITAR_EX;
-let run = null, runEx = null, metro = null, statsTimer = null, targetFlash = null;
+const EXS = window.GUITAR_EX, FB = window.FRETBOARD;
+const QS = new URLSearchParams(location.search);
+let run = null, runEx = null, statsTimer = null, targetFlash = null;
 
 function fillExercises() {
   const sel = $('ex-pick');
   sel.innerHTML = ['Warm-up', 'Scale', 'Arpeggio'].map(c =>
     `<optgroup label="${c}s">` + EXS.CATALOGUE.filter(e => e.cat === c).map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('') + '</optgroup>').join('');
-  const saved = localStorage.getItem('rsm-notes-ex');
-  if (saved && EXS.CATALOGUE.some(e => e.id === saved)) sel.value = saved;
+  const want = QS.get('ex') || localStorage.getItem('rsm-notes-ex');
+  if (want && EXS.CATALOGUE.some(e => e.id === want)) sel.value = want;
   showExercise();
+  if (QS.has('at')) { const e = currentEx(), i = Number(QS.get('at')); renderBoard(e, i); renderStrip(e, i); }   // preview a mid-run state
 }
 function currentEx() { return EXS.CATALOGUE.find(e => e.id === $('ex-pick').value); }
 function showExercise() {
@@ -419,7 +448,12 @@ function showExercise() {
   localStorage.setItem('rsm-notes-ex', e.id);
   $('ex-desc').innerHTML = `${esc(e.desc)}<small>${esc(e.source)} · ${e.seq.length} notes · suggested ${e.tempo} bpm</small>`;
   $('ex-bpm').value = e.tempo;
-  if (runEx !== e) { endRun(); renderStrip(e, -1); $('ex-target').innerHTML = 'press Begin'; $('ex-stats').textContent = ''; }
+  if (metro) metroStart(bpm());
+  if (runEx !== e) { endRun(); renderBoard(e, -1); renderStrip(e, -1); $('ex-target').innerHTML = 'press Begin'; $('ex-stats').textContent = ''; }
+}
+function renderBoard(e, idx) {
+  const root = e.cat === 'Warm-up' ? null : e.seq[0].m % 12;   // scales and arpeggios start on their root
+  $('ex-board').innerHTML = FB.svg(e.seq, {index: idx, root});
 }
 function renderStrip(e, idx) {
   $('ex-strip').innerHTML = e.seq.map((n, i) =>
@@ -447,24 +481,24 @@ function beginRun() {
   const e = currentEx(); if (!e) return;
   if (!ctx) { flash('warn', 'Press Start listening first, then Begin.'); return; }
   run = EXS.createRun(e, {anyOctave: $('ex-anyoct').checked}); runEx = e;
-  renderStrip(e, 0); showTarget(); updateExStats();
+  renderBoard(e, 0); renderStrip(e, 0); showTarget(); updateExStats();
   clearInterval(statsTimer); statsTimer = setInterval(updateExStats, 500);
-  if ($('ex-metro').checked) metroStart(Number($('ex-bpm').value) || e.tempo);
   $('ex-begin').textContent = 'Restart'; $('ex-stop').disabled = false;
 }
 function endRun() {
-  run = null; runEx = null; metroStop(); clearInterval(statsTimer); statsTimer = null;
+  run = null; runEx = null; clearInterval(statsTimer); statsTimer = null;
   $('ex-begin').textContent = 'Begin'; $('ex-stop').disabled = true;
 }
 function exFeed(midi) {
   if (!run || run.done) return;
   const r = run.feed(midi, performance.now());
   if (r.event === 'ignore') return;
+  renderBoard(runEx, run.done ? runEx.seq.length : run.index);
   renderStrip(runEx, run.index);
   updateExStats();
   if (r.event === 'done') {
     showTarget();
-    metroStop(); clearInterval(statsTimer);
+    clearInterval(statsTimer);
     const st = run.stats(performance.now());
     flash('ok', `${runEx.name} done: ${st.correct} notes in ${st.seconds.toFixed(1)} s, ${st.notesPerMin.toFixed(0)} notes/min, ${st.wrong} wrong. Press Restart to go again.`, 12000);
     $('ex-stop').disabled = true;
@@ -472,27 +506,41 @@ function exFeed(midi) {
   }
   showTarget(r.event === 'wrong' ? 'bad' : 'good');
 }
-function metroStart(bpm) {
+
+/* metronome: its own audio context, so it runs with or without listening or an exercise */
+let metroCtx = null, metro = null;
+const bpm = () => Math.min(240, Math.max(30, Number($('ex-bpm').value) || 72));
+function metroStart(rate) {
   metroStop();
-  if (!ctx) return;
-  let next = ctx.currentTime + 0.1;
+  if (!metroCtx) metroCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (metroCtx.state === 'suspended') metroCtx.resume();
+  const c = metroCtx, btn = $('ex-metro');
+  let next = c.currentTime + 0.05, beat = 0;
   metro = setInterval(() => {
-    while (next < ctx.currentTime + 0.15) {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.frequency.value = 1000; g.gain.setValueAtTime(0.25, next); g.gain.exponentialRampToValueAtTime(0.001, next + 0.04);
-      o.connect(g).connect(ctx.destination); o.start(next); o.stop(next + 0.05);
-      next += 60 / bpm;
+    while (next < c.currentTime + 0.15) {
+      const accent = beat % 4 === 0, o = c.createOscillator(), g = c.createGain();
+      o.frequency.value = accent ? 1500 : 1000;
+      g.gain.setValueAtTime(accent ? 0.35 : 0.22, next); g.gain.exponentialRampToValueAtTime(0.001, next + 0.04);
+      o.connect(g).connect(c.destination); o.start(next); o.stop(next + 0.05);
+      setTimeout(() => { btn.classList.add('beat'); setTimeout(() => btn.classList.remove('beat'), 90); }, Math.max(0, (next - c.currentTime) * 1000));
+      next += 60 / rate; beat++;
     }
   }, 50);
+  btn.classList.add('on'); btn.textContent = 'metronome on';
 }
-function metroStop() { if (metro) clearInterval(metro); metro = null; }
+function metroStop() {
+  if (metro) clearInterval(metro);
+  metro = null;
+  const btn = $('ex-metro'); btn.classList.remove('on'); btn.textContent = 'metronome';
+}
 $('ex-pick').onchange = showExercise;
 $('ex-begin').onclick = beginRun;
 $('ex-stop').onclick = () => { endRun(); $('ex-target').innerHTML = 'stopped'; };
-$('ex-metro').onchange = () => { if (run && !run.done) { if ($('ex-metro').checked) metroStart(Number($('ex-bpm').value) || 72); else metroStop(); } };
-$('ex-bpm').onchange = () => { if (metro) metroStart(Number($('ex-bpm').value) || 72); };
+$('ex-metro').onclick = () => { if (metro) metroStop(); else metroStart(bpm()); };
+$('ex-bpm').onchange = () => { if (metro) metroStart(bpm()); };
 fillExercises();
 $('quit').onclick = async () => {
+  metroStop();
   try { await stop(); } catch (e) {}
   await fetch('/api/quit', {method: 'POST'}).catch(() => {});
   document.body.innerHTML = '<div class="empty">Manager stopped. You can close this tab.</div>';
