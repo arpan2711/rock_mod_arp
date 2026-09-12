@@ -41,9 +41,11 @@ log always says which build is running.
 or `http://127.0.0.1:8734/settings`. Edits `RSMods.ini` in place and keeps `config/RSMods.ini` in
 step; `RSMods.exe` is no longer needed for anything we use. Details in §Mod settings page.
 
-**Guitar Notes page — built 12 Sep (backlog #14).** Song Manager → *guitar notes*, or
-`http://127.0.0.1:8734/notes`. Listen-only: the browser reads the NUX and shows the note; you keep
-hearing the pedal directly, so nothing is added to the sound. Details in §Guitar Notes page.
+**Guitar Notes page — built 12 Sep (backlog #14), exercises added the same day (#15).** Song
+Manager → *guitar notes*, or `http://127.0.0.1:8734/notes`. Listen-only: the browser reads the
+NUX and shows the note; you keep hearing the pedal directly, so nothing is added to the sound.
+21 exercises — spider warm-ups, position scales, barre-shape arpeggios — run against the
+detector with a next-note prompt, wrong-note count and notes/min. Details in §Guitar Notes page.
 
 **PICK UP HERE — next session: #12 (live scrub while paused), then #11 (menu tone, decide A/B).**
 
@@ -490,6 +492,7 @@ Ranked for a practice tool. Effort is a guess.
 | 10 | ~~**`LatencyBuffer=1`**~~ — tried 12 Sep, crackles; 2 is the floor | — | `Rocksmith.ini` |
 | 13 | ~~**Settings page in Song Manager**~~ — **done 12 Sep**, see §Mod settings page. Spec kept below for the record | — | `SongManager/settings.html`, `rsmods_ini.py` |
 | 14 | ~~**Guitar Notes page**~~ — **done 12 Sep**, see §Guitar Notes page. Possible follow-ons: bass mode (4096 window), chord detection (real DSP work), a browser amp sim (pay ~20 ms) | — | `SongManager/notes.html`, `notes-dsp.js` |
+| 15 | ~~**Exercises in Guitar Notes**~~ — **done 12 Sep**, 21 of them, see §Exercises. Follow-ons: more keys/positions (one line each), 3-notes-per-string shapes, a practice log of exercise runs (ties into #5) | — | `SongManager/exercises.js` |
 | 12 | **Live scrub while paused** — try `SeekOnEvent` on the paused voice so the highway redraws at the new spot while paused, instead of only on resume. Keep the deferred seek as the fallback if the highway does not follow | small | pause handler in `dllmain.cpp` |
 | 11 | **Menu / tuner tone** — the game's out-of-song tone is a hard-wired high-gain preset and Rocksmith has no default-tone setting (Ubisoft confirmed on the Steam forums). Two ways round it, decision pending: **A** clean tone saved to Tone Designer slot 2–4, pressed by hand after every song; **B** (recommended) `MuteGameAmpOutsideSongs=on` — hold `Mixer_Player1` at 0 whenever `currentMenu` is not a song mode, so menus / tuner / lessons are pedal-only and the game amp returns when a song starts, respecting the `'` toggle. ~20 lines on the amp-toggle plumbing | small | `VolumeControl::MutePlayer`, `songModes`, the per-frame block in `Hook_EndScene` |
 
@@ -529,7 +532,8 @@ installed`), the `RSMODS Version:` line from `RSMods_debug.txt`, `LatencyBuffer`
 RS_ASIO buffer / drivers, last 10 log lines.
 
 **Deploy:** the server runs from `Y:\...\SongManager\`, which is a copy. After editing in the
-repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html`, `notes.html`, `notes-dsp.js` over. The repo is found
+repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html`, `notes.html`, `notes-dsp.js`,
+`exercises.js` over. The repo is found
 from there via `ROCK_MOD_ARP` env, else the parent of the script, else `~\rock_mod_arp`.
 
 **Not done:** editing `Rocksmith.ini` / `RS_ASIO.ini` (display only, as specified). Reload
@@ -566,6 +570,38 @@ choice. When Rocksmith is running, RS_ASIO holds the NUX exclusively and the pag
 
 **Limits:** monophonic — single notes only, chords are not identified. Guitar range: bass low
 E (41 Hz) is below what the window resolves; a bass mode would need a 4096 window.
+
+### Exercises (built 12 Sep, backlog #15)
+
+Below the readout. Pick one, *Start listening*, *Begin*, play. The panel shows the next target
+(note plus suggested string·fret), the whole sequence as chips that light as you go, and
+`played / total · wrong · time · notes/min · accuracy`. A correct note advances; a wrong one is
+counted and the cursor stays; the note you just played, heard again as it rings, is ignored.
+Optional metronome click (through the PC speakers) and an *any octave counts* mode.
+
+| Piece | File |
+|---|---|
+| Catalogue + runner | `SongManager/exercises.js` — shapes are *generated* from interval formulas inside a fret window on standard tuning, so fingerings are the standard position shapes by construction |
+| Tests (51) | `node SongManager\test_exercises.js` — pins the well-known shapes to their textbook fingerings (box 1 = `E5 E8 A5 A7 D5 D7 G5 G7 B5 B8 e5 e8`, the G major E-shape, the harmonic-minor stretch on `D6`/`B9`, the A barre arpeggio `E5 A4 A7 D7 G6 B5 e5`), catalogue invariants (no consecutive repeats, frets 0–15, up-then-down), and the runner |
+| Route | `server.py`: `GET /exercises.js` |
+
+**What is in it, and where it comes from**
+
+| Group | Exercises | Source tradition |
+|---|---|---|
+| Warm-up | chromatic spider 1-2-3-4; permutations 1-3-2-4, 1-4-2-3, 4-3-2-1; chromatic run up the low E | Leavitt, *A Modern Method for Guitar*; Petrucci, *Rock Discipline*; Stetina, *Speed Mechanics* |
+| Scale | C major open; G major two-octave E-shape; A minor pentatonic box 1; A blues; G major pentatonic; A natural minor; A harmonic minor; A Dorian; A Mixolydian; C major along the A string | Hal Leonard method; CAGED / pentatonic boxes (Edwards, *Fretboard Logic*); Segovia scales; Govan, *Creative Guitar* (single-string) |
+| Arpeggio | A major, A minor, A7, Amaj7, Am7, A dim7 — all 5th-fret barre shapes | the barre-chord arpeggios every rock method teaches |
+
+Every scale runs root-to-root two octaves (or the whole box for the pentatonic/blues shapes)
+and back down; every exercise carries a suggested tempo.
+
+**Honest limit:** the detector hears *pitch*, not position. The string·fret is a suggestion;
+the same pitch on another string still counts. Adding more shapes is one line each in
+`CATALOGUE` — the generator (`shape(root, formula, lo, hi)`) does the fingering.
+
+**Not yet opened in a browser.** Test with the *test tone*: begin an exercise, then slide the
+tone through the sequence and watch the chips advance.
 
 ### #13 — the original spec (as agreed 12 Sep, kept for the record)
 

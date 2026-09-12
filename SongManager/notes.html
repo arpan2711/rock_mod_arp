@@ -100,6 +100,29 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
 .chip small{font-family:var(--mono);font-weight:400;font-size:10px;color:var(--ink-3)}
 .chip.now{border-color:var(--accent-line);background:var(--accent-soft)}
 .foot{padding:8px 22px;border-top:1px solid var(--rule-soft);font-family:var(--mono);font-size:11px;color:var(--ink-3);display:flex;gap:18px;flex-wrap:wrap}
+
+/* ---------- exercises ---------- */
+.ex{border-top:1px solid var(--rule);background:var(--surface);padding:14px 22px;display:flex;flex-direction:column;gap:10px}
+.ex-head{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.ex-head label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);display:flex;flex-direction:column;gap:3px}
+.ex-head select{min-width:320px}
+.ex-opts{font-family:var(--body);font-size:13px;color:var(--ink-2);text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:6px;padding:7px 0}
+.ex-opts input[type=number]{width:70px;padding:4px 6px}
+.ex-desc{font-size:13px;color:var(--ink-2);max-width:960px}
+.ex-desc small{display:block;font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:3px}
+.ex-target{font-family:var(--display);font-size:20px;font-weight:600;min-height:40px;display:flex;align-items:baseline;gap:12px;color:var(--ink-3)}
+.ex-target b{font-size:34px;color:var(--accent);transition:color .1s}
+.ex-target .pos{font-family:var(--mono);font-size:13px;color:var(--ink-3);font-weight:400}
+.ex-target.bad b{color:var(--stop)}
+.ex-target.good b{color:var(--on)}
+.ex-strip{display:flex;gap:4px;overflow-x:auto;padding:4px 0 6px;scroll-behavior:smooth}
+.ex-strip .c{flex:none;font-family:var(--mono);font-size:11px;padding:4px 7px;border:1px solid var(--rule);border-radius:3px;background:var(--surface-2);
+  color:var(--ink-3);display:flex;flex-direction:column;align-items:center;line-height:1.3;min-width:46px}
+.ex-strip .c b{font-family:var(--display);font-size:13px;font-weight:600;color:var(--ink-2)}
+.ex-strip .c.done{opacity:.5} .ex-strip .c.done b{color:var(--on)}
+.ex-strip .c.now{border-color:var(--accent-line);background:var(--accent-soft)} .ex-strip .c.now b{color:var(--accent)}
+.ex-stats{font-family:var(--mono);font-size:12px;color:var(--ink-2);min-height:18px}
+.ex-stats b{color:var(--ink);font-weight:500}
 </style>
 </head>
 <body>
@@ -145,6 +168,21 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
   </div>
 </div>
 
+<div class="ex" id="ex">
+  <div class="ex-head">
+    <label>exercise<select id="ex-pick"></select></label>
+    <label>&nbsp;<span class="ex-opts"><input type="checkbox" id="ex-anyoct"> any octave counts</span></label>
+    <label>&nbsp;<span class="ex-opts"><input type="checkbox" id="ex-metro"> click at <input type="number" id="ex-bpm" min="30" max="240" value="72"> bpm</span></label>
+    <span class="spacer"></span>
+    <button class="btn primary" id="ex-begin">Begin</button>
+    <button class="btn" id="ex-stop" disabled>Stop</button>
+  </div>
+  <div class="ex-desc" id="ex-desc"></div>
+  <div class="ex-target" id="ex-target">pick an exercise, press Start listening, then Begin</div>
+  <div class="ex-strip" id="ex-strip"></div>
+  <div class="ex-stats" id="ex-stats"></div>
+</div>
+
 <div class="history" id="history"><span class="l">played</span></div>
 <div class="foot">
   <span id="f-ctx">audio: idle</span>
@@ -152,6 +190,7 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
   <span>range: A1 – 24th fret on the high E (guitar; bass low E is below the window)</span>
 </div>
 
+<script src="/exercises.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -255,6 +294,7 @@ function wireTestTone() {
 }
 
 async function stop() {
+  metroStop();
   if (osc) { try { osc.stop(); } catch (_) {} osc = oscGain = null; }
   if (source) { try { source.disconnect(); } catch (_) {} source = null; }
   if (worklet) { try { worklet.disconnect(); } catch (_) {} worklet = null; }
@@ -308,7 +348,7 @@ function onReading(r) {
   // Two consecutive agreeing readings before the displayed note changes.
   const agree = readings.length >= 2 && readings[readings.length - 1] === readings[readings.length - 2];
   if (rounded !== shown && !agree) return;
-  if (rounded !== shown) { shown = rounded; shownSince = performance.now(); pushHistory(rounded); }
+  if (rounded !== shown) { shown = rounded; shownSince = performance.now(); pushHistory(rounded); exFeed(rounded); }
   shownSince = performance.now();
   const cents = (m - rounded) * 100;
   drawNote(rounded, cents, r.freq);
@@ -356,6 +396,99 @@ async function beat() {
 }
 setInterval(beat, 20000); beat();
 if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) navigator.mediaDevices.enumerateDevices().then(() => listDevices().catch(() => {}));
+
+/* ---------------- exercises ---------------- */
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const EXS = window.GUITAR_EX;
+let run = null, runEx = null, metro = null, statsTimer = null, targetFlash = null;
+
+function fillExercises() {
+  const sel = $('ex-pick');
+  sel.innerHTML = ['Warm-up', 'Scale', 'Arpeggio'].map(c =>
+    `<optgroup label="${c}s">` + EXS.CATALOGUE.filter(e => e.cat === c).map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('') + '</optgroup>').join('');
+  const saved = localStorage.getItem('rsm-notes-ex');
+  if (saved && EXS.CATALOGUE.some(e => e.id === saved)) sel.value = saved;
+  showExercise();
+}
+function currentEx() { return EXS.CATALOGUE.find(e => e.id === $('ex-pick').value); }
+function showExercise() {
+  const e = currentEx(); if (!e) return;
+  localStorage.setItem('rsm-notes-ex', e.id);
+  $('ex-desc').innerHTML = `${esc(e.desc)}<small>${esc(e.source)} · ${e.seq.length} notes · suggested ${e.tempo} bpm</small>`;
+  $('ex-bpm').value = e.tempo;
+  if (runEx !== e) { endRun(); renderStrip(e, -1); $('ex-target').innerHTML = 'press Begin'; $('ex-stats').textContent = ''; }
+}
+function renderStrip(e, idx) {
+  $('ex-strip').innerHTML = e.seq.map((n, i) =>
+    `<span class="c ${i < idx ? 'done' : i === idx ? 'now' : ''}"><b>${EXS.noteName(n.m)}</b>${EXS.label(n)}</span>`).join('');
+  const now = $('ex-strip').querySelector('.c.now');
+  if (now) now.scrollIntoView({inline: 'center', block: 'nearest'});
+}
+function showTarget(kind) {
+  const el = $('ex-target');
+  if (!run) return;
+  if (run.done) { el.className = 'ex-target good'; el.innerHTML = '<b>done</b>'; return; }
+  const t = run.target;
+  el.innerHTML = `next <b>${EXS.noteName(t.m)}</b> <span class="pos">${EXS.label(t)} · ${run.index + 1} of ${run.seq.length}</span>`;
+  el.className = 'ex-target' + (kind ? ' ' + kind : '');
+  clearTimeout(targetFlash);
+  if (kind) targetFlash = setTimeout(() => { el.className = 'ex-target'; }, 250);
+}
+function updateExStats() {
+  if (!run) return;
+  const st = run.stats(performance.now());
+  const t = st.seconds, mm = Math.floor(t / 60), ss = String(Math.floor(t % 60)).padStart(2, '0');
+  $('ex-stats').innerHTML = `<b>${st.index}</b> / ${st.total} · <b>${st.wrong}</b> wrong · ${mm}:${ss} · <b>${st.notesPerMin.toFixed(0)}</b> notes/min · ${(st.accuracy * 100).toFixed(0)}% accuracy`;
+}
+function beginRun() {
+  const e = currentEx(); if (!e) return;
+  if (!ctx) { flash('warn', 'Press Start listening first, then Begin.'); return; }
+  run = EXS.createRun(e, {anyOctave: $('ex-anyoct').checked}); runEx = e;
+  renderStrip(e, 0); showTarget(); updateExStats();
+  clearInterval(statsTimer); statsTimer = setInterval(updateExStats, 500);
+  if ($('ex-metro').checked) metroStart(Number($('ex-bpm').value) || e.tempo);
+  $('ex-begin').textContent = 'Restart'; $('ex-stop').disabled = false;
+}
+function endRun() {
+  run = null; runEx = null; metroStop(); clearInterval(statsTimer); statsTimer = null;
+  $('ex-begin').textContent = 'Begin'; $('ex-stop').disabled = true;
+}
+function exFeed(midi) {
+  if (!run || run.done) return;
+  const r = run.feed(midi, performance.now());
+  if (r.event === 'ignore') return;
+  renderStrip(runEx, run.index);
+  updateExStats();
+  if (r.event === 'done') {
+    showTarget();
+    metroStop(); clearInterval(statsTimer);
+    const st = run.stats(performance.now());
+    flash('ok', `${runEx.name} done: ${st.correct} notes in ${st.seconds.toFixed(1)} s, ${st.notesPerMin.toFixed(0)} notes/min, ${st.wrong} wrong. Press Restart to go again.`, 12000);
+    $('ex-stop').disabled = true;
+    return;
+  }
+  showTarget(r.event === 'wrong' ? 'bad' : 'good');
+}
+function metroStart(bpm) {
+  metroStop();
+  if (!ctx) return;
+  let next = ctx.currentTime + 0.1;
+  metro = setInterval(() => {
+    while (next < ctx.currentTime + 0.15) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = 1000; g.gain.setValueAtTime(0.25, next); g.gain.exponentialRampToValueAtTime(0.001, next + 0.04);
+      o.connect(g).connect(ctx.destination); o.start(next); o.stop(next + 0.05);
+      next += 60 / bpm;
+    }
+  }, 50);
+}
+function metroStop() { if (metro) clearInterval(metro); metro = null; }
+$('ex-pick').onchange = showExercise;
+$('ex-begin').onclick = beginRun;
+$('ex-stop').onclick = () => { endRun(); $('ex-target').innerHTML = 'stopped'; };
+$('ex-metro').onchange = () => { if (run && !run.done) { if ($('ex-metro').checked) metroStart(Number($('ex-bpm').value) || 72); else metroStop(); } };
+$('ex-bpm').onchange = () => { if (metro) metroStart(Number($('ex-bpm').value) || 72); };
+fillExercises();
 </script>
 </body>
 </html>
