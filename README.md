@@ -525,7 +525,7 @@ RS_ASIO buffer / drivers, last 10 log lines.
 
 **Deploy:** the server runs from `Y:\...\SongManager\`, which is a copy. After editing in the
 repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html` over. The repo is found
-from there via `ROCK_MOD_ARP` env, else the parent of the script, else `~ock_mod_arp`.
+from there via `ROCK_MOD_ARP` env, else the parent of the script, else `~\rock_mod_arp`.
 
 **Not done:** editing `Rocksmith.ini` / `RS_ASIO.ini` (display only, as specified). Reload
 in-game is still `Ctrl+A`; the page says so.
