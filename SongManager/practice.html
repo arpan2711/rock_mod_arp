@@ -81,10 +81,10 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
 .banner.warn{background:var(--warn-bg);color:var(--warn)} .banner.stop{background:var(--stop-bg);color:var(--stop)} .banner.ok{background:var(--on-bg);color:var(--on)}
 
 /* live readout strip: what the detector hears right now */
-.live{display:flex;align-items:center;gap:18px;padding:8px 22px;border-bottom:1px solid var(--rule);background:var(--surface);font-family:var(--mono);font-size:12px;color:var(--ink-3)}
-.live .n{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.02em;color:var(--ink-3);min-width:64px;line-height:1}
+.live{display:flex;align-items:center;gap:18px;padding:0 22px;height:50px;flex-wrap:nowrap;overflow:hidden;border-bottom:1px solid var(--rule);background:var(--surface);font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.live .n{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.02em;color:var(--ink-3);width:96px;height:32px;line-height:32px;white-space:nowrap;overflow:hidden;flex:none}
 .live .n.live{color:var(--ink)} .live .n.tuned{color:var(--on)}
-.live .cents{min-width:110px}
+.live .cents{width:190px;flex:none;white-space:nowrap;overflow:hidden}
 .live .bar{flex:0 0 220px;height:5px;background:var(--rule);border-radius:3px;overflow:hidden}
 .live .bar i{display:block;height:100%;width:0;background:var(--on);transition:width .05s linear}
 .live .bar i.hot{background:var(--stop)}
@@ -99,7 +99,7 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
 .pos label.all{font-weight:600;color:var(--ink)}
 
 .stage{padding:16px 22px 22px;display:flex;flex-direction:column;gap:10px;flex:1}
-.target{font-family:var(--display);font-size:20px;font-weight:600;min-height:40px;display:flex;align-items:baseline;gap:12px;color:var(--ink-3);flex-wrap:wrap}
+.target{font-family:var(--display);font-size:20px;font-weight:600;height:52px;line-height:52px;display:flex;align-items:baseline;gap:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden}
 .target b{font-size:34px;color:var(--accent);transition:color .1s}
 .target .pos-l{font-family:var(--mono);font-size:13px;color:var(--ink-3);font-weight:400}
 .target.bad b{color:var(--stop)} .target.good b{color:var(--on)}
@@ -107,8 +107,8 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
 .progress{max-width:1100px;display:flex;flex-direction:column;gap:6px}
 .progress .track{height:6px;background:var(--rule);border-radius:3px;overflow:hidden}
 .progress .track i{display:block;height:100%;width:0;background:var(--accent-line);transition:width .15s}
-.progress .txt{font-family:var(--mono);font-size:12px;color:var(--ink-2)} .progress .txt b{color:var(--ink);font-weight:500}
-.strip{display:flex;gap:4px;overflow-x:auto;padding:4px 0 6px;scroll-behavior:smooth;max-width:1100px}
+.progress .txt{font-family:var(--mono);font-size:12px;color:var(--ink-2);height:20px;line-height:20px;white-space:nowrap;overflow:hidden} .progress .txt b{color:var(--ink);font-weight:500}
+.strip{display:flex;gap:4px;overflow-x:auto;padding:4px 0 6px;scroll-behavior:smooth;max-width:1100px;min-height:56px}
 .strip .c{flex:none;font-family:var(--mono);font-size:11px;padding:4px 7px;border:1px solid var(--rule);border-radius:3px;background:var(--surface-2);
   color:var(--ink-3);display:flex;flex-direction:column;align-items:center;line-height:1.3;min-width:46px}
 .strip .c b{font-family:var(--display);font-size:13px;font-weight:600;color:var(--ink-2)}
