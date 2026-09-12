@@ -10,10 +10,10 @@ from PIL import Image, ImageDraw, ImageFont
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'keymap-wooting-80he.png')
 
 # ---- geometry (1u = one key) --------------------------------------------------------
-U = 100         # px per key unit
+U = 124         # px per key unit
 G = 7           # gap inside the unit
 R = 10          # corner radius
-X0, Y0 = 60, 130
+X0, Y0 = 60, 160
 FROW_GAP = 0.35 # extra vertical gap under the F-row
 
 # ---- colours -----------------------------------------------------------------------
@@ -78,24 +78,24 @@ def font(size, bold=False):
             return ImageFont.truetype(p, size)
     return ImageFont.load_default()
 
-F_TITLE = font(34, True)
-F_SUB   = font(18)
-F_KEY   = font(17, True)
-F_KEYS  = font(13)
-F_SHORT = font(13, True)
-F_LEG   = font(16)
-F_NOTE  = font(14)
+F_TITLE = font(42, True)
+F_SUB   = font(22)
+F_KEY   = font(23, True)
+F_KEYS  = font(17)
+F_SHORT = font(19, True)
+F_LEG   = font(21)
+F_NOTE  = font(19)
 
 board_w = 17.25 * U
 board_h = (6 + FROW_GAP) * U
 W = int(X0 * 2 + board_w)
-H = int(Y0 + board_h + 250)
+H = int(Y0 + board_h + 300)
 img = Image.new('RGB', (W, H), BG)
 d = ImageDraw.Draw(img)
 
 # title
-d.text((X0, 36), 'Rocksmith practice keys \u2014 Wooting 80HE', font=F_TITLE, fill=TEXT)
-d.text((X0, 84), 'RSMods keybinds from RSMods.ini. Everything works live inside a song, one key each, no Ctrl.',
+d.text((X0, 40), 'Rocksmith practice keys \u2014 Wooting 80HE', font=F_TITLE, fill=TEXT)
+d.text((X0, 100), 'RSMods keybinds from RSMods.ini. Everything works live inside a song, one key each, no Ctrl.',
        font=F_SUB, fill=TEXT_DIM)
 
 # case
@@ -113,10 +113,10 @@ def draw_key(x, y, w, label):
     d.text((px0 + 9, py0 + 6), label, font=lf, fill=ink)
     if sc:
         _, primary, ctrl = sc
-        ty = py0 + 28
+        ty = py0 + 36
         if primary:
             d.multiline_text((px0 + 9, ty), primary, font=F_SHORT, fill=ink, spacing=1)
-            ty += 17 * (primary.count('\n') + 1) + 4
+            ty += 24 * (primary.count('\n') + 1) + 5
         if ctrl:
             d.multiline_text((px0 + 9, ty), ctrl, font=F_SHORT, fill=ink, spacing=1)
 
@@ -135,12 +135,12 @@ d.text((lx, ly), 'Legend', font=F_LEG, fill=TEXT)
 ly += 30
 for name in ('loop', 'speed', 'rewind', 'amp', 'mod', 'game'):
     col, txt = GROUPS[name]
-    d.rounded_rectangle((lx, ly + 2, lx + 22, ly + 20), radius=5, fill=col)
-    d.text((lx + 32, ly), txt, font=F_LEG, fill=TEXT)
-    ly += 26
+    d.rounded_rectangle((lx, ly + 4, lx + 26, ly + 26), radius=6, fill=col)
+    d.text((lx + 38, ly), txt, font=F_LEG, fill=TEXT)
+    ly += 32
 
 # notes, right of the legend
-nx = X0 + 420
+nx = X0 + 520
 ny = Y0 + board_h + 50
 notes = [
     'Workflow:  [ and ] around a few bars  ->  tap - to slow it down  ->  work it  ->  tap = past 100%',
@@ -154,7 +154,7 @@ notes = [
 ]
 for t in notes:
     d.text((nx, ny), t, font=F_NOTE, fill=TEXT_DIM)
-    ny += 24
+    ny += 30
 
 img.save(OUT)
 print('wrote', OUT, img.size)

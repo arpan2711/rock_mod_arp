@@ -29,9 +29,9 @@ samples with `LatencyBuffer=2` (a full session, clean — `1` crackles, so this 
 accuracy / streak / loop-pass overlay in Learn A Song; the no-Ctrl key cluster; calibration
 at full refresh rate; the four 9 Sep ports.
 
-**Not yet tested:** **pause / scrub** (`P`, `Delete`, built 01:28 on 12 Sep) — the first test
-answers whether the note highway freezes with the audio; see §Pause and scrub. Also still
-unexercised: the Score Attack overlay line. Next decision: the menu tone (backlog #11).
+**Tested 12 Sep:** pause / scrub (`P`, `Delete`) — all four checks passed, the highway freezes
+with the audio, so the game's clock follows the audio position. Still unexercised: the Score
+Attack overlay line. Next: live scrub while paused (backlog #12), the menu tone (#11).
 
 ---
 
@@ -156,7 +156,7 @@ Do these in order. Tick them off here as they pass.
       `pass N` line appears and after each wrap becomes `pass N, last pass 92%`; setting or
       clearing the loop resets it to `pass 1`. In Score Attack a `score …, x4 (best x8), …`
       line appears under the streak.
-- [ ] **Pause / scrub** — `P` mid-song: audio stops **and the highway stops**; `P` again
+- [x] **Pause / scrub** *(12 Sep — all four passed; highway freezes with the audio)* — `P` mid-song: audio stops **and the highway stops**; `P` again
       resumes where it was. Then `P`, `Backspace` × 2, `P`: resumes 10 s earlier; same with
       `Delete` forwards. `Delete` while playing jumps 5 s ahead. Esc over a mod-pause and
       resuming from the menu does not leave things stuck. Check `RSMods_debug.txt` for the
@@ -440,8 +440,7 @@ ForwardBy = 5000
 (`ExecuteActionOnEvent("Play_<key>", Pause)`), the same handle rewind and the loop-wrap
 seek already use. The note highway follows the song audio — that is why rewind moves the
 notes — so pausing the audio should freeze the highway too. **That is the thing the first
-test confirms**; the `(PAUSE) Resuming` log line records what the game's timer read while
-paused, so a running clock would show up as a mismatch.
+test confirmed on 12 Sep** — the highway freezes with the audio.
 
 While paused, `Backspace` / `Delete` do not seek live; they move a resume point, shown
 top-centre as `PAUSED  1:42  ->  1:32`, and `P` seeks there and resumes. Deferring the seek
@@ -473,6 +472,7 @@ Ranked for a practice tool. Effort is a guess.
 | 8 | **Strict loop** — miss a note inside a loop and it rewinds to the loop start; toggle key so it is opt-in | small-medium | `totalNotesMissed` delta per frame + the existing loop seek at `dllmain.cpp` |
 | 9 | **Switch the MG-300's preset from the game** — the MK2 takes MIDI over USB: CC#60 (or #73) on channel 1, value = preset number selects a preset; program change does *not* work and there is no bypass CC, so "mute the pedal" = switch to a user-made silent preset. Two uses: (a) make `\` also flip the pedal between your playing preset and a silent one, closing the "physical amp still makes noise" gap; (b) per-song pedal preset, the way `AutoTuneForSong` already sends tuning pedals a program change over WinMM MIDI out | medium; USB-MIDI on this pedal is reported as fiddly | `Mods/Midi.cpp` (already has a MIDI-out device picker + send), `ToggleAmpSourceKey` handler |
 | 10 | ~~**`LatencyBuffer=1`**~~ — tried 12 Sep, crackles; 2 is the floor | — | `Rocksmith.ini` |
+| 12 | **Live scrub while paused** — try `SeekOnEvent` on the paused voice so the highway redraws at the new spot while paused, instead of only on resume. Keep the deferred seek as the fallback if the highway does not follow | small | pause handler in `dllmain.cpp` |
 | 11 | **Menu / tuner tone** — the game's out-of-song tone is a hard-wired high-gain preset and Rocksmith has no default-tone setting (Ubisoft confirmed on the Steam forums). Two ways round it, decision pending: **A** clean tone saved to Tone Designer slot 2–4, pressed by hand after every song; **B** (recommended) `MuteGameAmpOutsideSongs=on` — hold `Mixer_Player1` at 0 whenever `currentMenu` is not a song mode, so menus / tuner / lessons are pedal-only and the game amp returns when a song starts, respecting the `'` toggle. ~20 lines on the amp-toggle plumbing | small | `VolumeControl::MutePlayer`, `songModes`, the per-frame block in `Hook_EndScene` |
 
 Suggested order: 11 first (decide A/B, an hour), then 3 → 8 → 5 as the practice arc (7 is done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
