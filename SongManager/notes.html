@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guitar Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f4f6f9; --surface:#fff; --surface-2:#eef2f7;
+  --ink:#131a22; --ink-2:#4a5663; --ink-3:#7b8794;
+  --rule:#dbe2ea; --rule-soft:#e8edf3;
+  --accent:#0b6fa8; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.10);
+  --on:#2f7d32; --on-bg:rgba(63,204,12,.14);
+  --warn:#8a5a00; --warn-bg:rgba(226,193,2,.18);
+  --stop:#a52a33; --stop-bg:rgba(255,79,90,.12);
+  --shadow:0 1px 2px rgba(19,26,34,.05),0 10px 30px -22px rgba(19,26,34,.5);
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1319; --surface:#151c24; --surface-2:#1b232d;
+  --ink:#e8edf3; --ink-2:#a5b2bf; --ink-3:#74828f;
+  --rule:#26313f; --rule-soft:#1e2732;
+  --accent:#56c2fb; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.14);
+  --on:#7fd36a; --on-bg:rgba(63,204,12,.16);
+  --warn:#e0bc4a; --warn-bg:rgba(226,193,2,.14);
+  --stop:#ff8189; --stop-bg:rgba(255,79,90,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -22px rgba(0,0,0,.9);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --surface:#151c24; --surface-2:#1b232d;
+  --ink:#e8edf3; --ink-2:#a5b2bf; --ink-3:#74828f;
+  --rule:#26313f; --rule-soft:#1e2732;
+  --accent:#56c2fb; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.14);
+  --on:#7fd36a; --on-bg:rgba(63,204,12,.16);
+  --warn:#e0bc4a; --warn-bg:rgba(226,193,2,.14);
+  --stop:#ff8189; --stop-bg:rgba(255,79,90,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -22px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+
+.mast{padding:18px 22px 14px;border-bottom:1px solid var(--rule);background:var(--surface);display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap}
+.mast h1{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:-.02em;margin:0;line-height:1}
+.mast .sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:5px}
+.mast .right{display:flex;gap:8px;margin-left:auto;align-items:center}
+.iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;padding:5px 9px;font-family:var(--mono);
+  font-size:11px;cursor:pointer;line-height:1.4;text-decoration:none;display:inline-block}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+.tools{padding:12px 22px;border-bottom:1px solid var(--rule);background:var(--surface-2);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.tools label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);display:flex;flex-direction:column;gap:3px}
+select,input[type=number]{padding:7px 9px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);color:var(--ink);font-family:var(--body);font-size:13px}
+input[type=number]{width:84px;font-family:var(--mono)}
+input[type=range]{width:150px;accent-color:var(--accent-line)}
+.btn{border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:3px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--body)}
+.btn:hover:not(:disabled){border-color:var(--accent-line)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.stop{border-color:var(--stop);color:var(--stop)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.spacer{margin-left:auto}
+.banner{padding:9px 22px;font-size:13px;display:none;align-items:center;gap:10px;border-bottom:1px solid var(--rule)}
+.banner.show{display:flex}
+.banner.warn{background:var(--warn-bg);color:var(--warn)} .banner.stop{background:var(--stop-bg);color:var(--stop)} .banner.ok{background:var(--on-bg);color:var(--on)}
+
+.stage{flex:1;display:grid;place-items:center;padding:24px 22px}
+.readout{width:min(720px,100%);display:flex;flex-direction:column;align-items:center;gap:14px}
+.note{font-family:var(--display);font-weight:700;font-size:clamp(120px,22vw,220px);line-height:.9;letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:6px;color:var(--ink-3);transition:color .12s}
+.note.live{color:var(--ink)} .note.tuned{color:var(--on)}
+.note .oct{font-size:.32em;font-weight:600;color:var(--ink-3)}
+.note .acc{font-size:.5em;font-weight:600}
+.hz{font-family:var(--mono);font-size:15px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-height:22px}
+.hz b{color:var(--ink);font-weight:500}
+.cents{width:100%;max-width:560px;position:relative;height:56px}
+.cents .scale{position:absolute;left:0;right:0;top:26px;height:2px;background:var(--rule)}
+.cents .tick{position:absolute;top:20px;width:1px;height:14px;background:var(--rule)}
+.cents .tick.mid{background:var(--ink-3);height:22px;top:16px}
+.cents .zone{position:absolute;top:22px;height:10px;background:var(--on-bg);left:calc(50% - 5%);width:10%;border-radius:2px}
+.cents .needle{position:absolute;top:8px;width:3px;height:38px;background:var(--accent-line);border-radius:2px;left:50%;
+  transform:translateX(-50%);transition:left .06s linear;opacity:0}
+.cents .needle.show{opacity:1}
+.cents .lbl{position:absolute;top:44px;font-family:var(--mono);font-size:10px;color:var(--ink-3);transform:translateX(-50%)}
+.neck{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);min-height:20px;text-align:center}
+.neck span{display:inline-block;margin:0 5px;padding:1px 7px;border:1px solid var(--rule);border-radius:3px;background:var(--surface)}
+.meter{width:100%;max-width:560px;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.meter .bar{flex:1;height:5px;background:var(--rule);border-radius:3px;overflow:hidden}
+.meter .bar i{display:block;height:100%;width:0;background:var(--on);transition:width .05s linear}
+.meter .bar i.hot{background:var(--stop)}
+
+.history{border-top:1px solid var(--rule);background:var(--surface);padding:12px 22px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-height:58px}
+.history .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-right:6px}
+.chip{font-family:var(--display);font-weight:600;font-size:15px;padding:5px 10px;border:1px solid var(--rule);border-radius:3px;background:var(--surface-2);display:flex;gap:6px;align-items:baseline}
+.chip small{font-family:var(--mono);font-weight:400;font-size:10px;color:var(--ink-3)}
+.chip.now{border-color:var(--accent-line);background:var(--accent-soft)}
+.foot{padding:8px 22px;border-top:1px solid var(--rule-soft);font-family:var(--mono);font-size:11px;color:var(--ink-3);display:flex;gap:18px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <div>
+    <h1>Guitar Notes</h1>
+    <div class="sub" id="sub">listens to the pedal; you hear the pedal directly, so nothing is added to the sound</div>
+  </div>
+  <div class="right">
+    <a class="iconbtn" href="/">song manager</a>
+    <a class="iconbtn" href="/settings">mod settings</a>
+    <button class="iconbtn" id="theme" title="Switch theme">theme</button>
+  </div>
+</div>
+
+<div class="tools">
+  <label>input<select id="device"><option value="">— allow the microphone first —</option></select></label>
+  <label>A4 reference<input type="number" id="a4" value="440" min="415" max="466" step="1"></label>
+  <label>noise gate<input type="range" id="gate" min="-70" max="-20" value="-48" step="1"><span id="gate-v" style="font-size:10px">-48 dBFS</span></label>
+  <label>test tone <span style="font-size:10px;text-transform:none;letter-spacing:0">(no guitar needed)</span>
+    <span style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="test"><input type="range" id="test-f" min="40" max="88" value="40" step="1"><span id="test-v" style="font-size:10px;font-family:var(--mono)">E2</span></span></label>
+  <span class="spacer"></span>
+  <button class="btn primary" id="start">Start listening</button>
+  <button class="btn stop" id="stop" disabled>Stop</button>
+</div>
+
+<div class="banner" id="banner"><span id="banner-text"></span></div>
+
+<div class="stage">
+  <div class="readout">
+    <div class="note" id="note"><span class="n">—</span></div>
+    <div class="hz" id="hz">press Start, then play a note</div>
+    <div class="cents">
+      <div class="scale"></div>
+      <div class="zone"></div>
+      <div class="tick" style="left:0"></div><div class="tick" style="left:25%"></div><div class="tick mid" style="left:50%"></div><div class="tick" style="left:75%"></div><div class="tick" style="left:100%"></div>
+      <div class="lbl" style="left:0">−50</div><div class="lbl" style="left:25%">−25</div><div class="lbl" style="left:50%">0 cents</div><div class="lbl" style="left:75%">+25</div><div class="lbl" style="left:100%">+50</div>
+      <div class="needle" id="needle"></div>
+    </div>
+    <div class="neck" id="neck"></div>
+    <div class="meter"><span>level</span><div class="bar"><i id="level"></i></div><span id="level-v">−∞ dB</span></div>
+  </div>
+</div>
+
+<div class="history" id="history"><span class="l">played</span></div>
+<div class="foot">
+  <span id="f-ctx">audio: idle</span>
+  <span id="f-game"></span>
+  <span>range: A1 – 24th fret on the high E (guitar; bass low E is below the window)</span>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const OPEN = [['E',40],['A',45],['D',50],['G',55],['B',59],['e',64]];  // standard tuning, low to high
+const noteName = m => NAMES[((m % 12) + 12) % 12];
+const octave = m => Math.floor(m / 12) - 1;
+
+/* theme, shared with the other pages */
+const savedTheme = localStorage.getItem('rsm-theme');
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+$('theme').onclick = () => {
+  const now = document.documentElement.dataset.theme;
+  const next = now === 'dark' ? 'light' : now === 'light' ? '' : 'dark';
+  if (next) { document.documentElement.dataset.theme = next; localStorage.setItem('rsm-theme', next); }
+  else { delete document.documentElement.dataset.theme; localStorage.removeItem('rsm-theme'); }
+};
+
+/* ---------------- audio graph ---------------- */
+let ctx = null, stream = null, source = null, worklet = null, osc = null, oscGain = null;
+let readings = [];          // last few raw estimates for the debounce
+let shown = null;           // midi number currently displayed
+let shownSince = 0;
+const history = [];
+
+function gateLinear() { return Math.pow(10, Number($('gate').value) / 20); }
+$('gate').oninput = () => { $('gate-v').textContent = $('gate').value + ' dBFS'; if (worklet) worklet.port.postMessage({opts: {gate: gateLinear()}}); };
+$('test-f').oninput = () => { const m = Number($('test-f').value); $('test-v').textContent = noteName(m) + octave(m); if (osc) osc.frequency.value = 440 * Math.pow(2, (m - 69) / 12); };
+$('test').onchange = () => { if (ctx) wireTestTone(); };
+
+async function listDevices() {
+  const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
+  const sel = $('device'), remembered = localStorage.getItem('rsm-notes-device');
+  sel.innerHTML = devs.map(d => `<option value="${d.deviceId}">${d.label || 'input ' + d.deviceId.slice(0, 6)}</option>`).join('') || '<option value="">no inputs found</option>';
+  const nux = devs.find(d => /nux/i.test(d.label));
+  const pick = devs.find(d => d.deviceId === remembered) || nux || devs[0];
+  if (pick) sel.value = pick.deviceId;
+  if (!nux) flash('warn', 'No NUX input found — is the MG-300 plugged in? Using ' + (pick ? (pick.label || 'the first input') : 'nothing') + ' for now.');
+  return pick ? pick.deviceId : null;
+}
+
+async function start() {
+  $('start').disabled = true;
+  try {
+    // First grab any input to get permission (labels are hidden until then), then pick the right one.
+    if (!stream) {
+      stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
+      const id = await listDevices();
+      if (id && !stream.getAudioTracks()[0].getSettings().deviceId?.startsWith(id)) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = await openDevice(id);
+      }
+    }
+    ctx = new AudioContext({latencyHint: 'interactive', sampleRate: 48000});
+    await ctx.audioWorklet.addModule('/notes-dsp.js');
+    worklet = new AudioWorkletNode(ctx, 'note-processor', {
+      numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1],
+      processorOptions: {window: 2048, hop: 512, opts: {gate: gateLinear()}},
+    });
+    worklet.port.onmessage = e => onReading(e.data);
+    // The worklet only runs if the graph reaches the destination; a muted gain keeps it silent.
+    const mute = ctx.createGain(); mute.gain.value = 0;
+    worklet.connect(mute).connect(ctx.destination);
+    source = ctx.createMediaStreamSource(stream);
+    source.connect(worklet);
+    wireTestTone();
+    $('stop').disabled = false;
+    $('device').disabled = false;
+    const tr = stream.getAudioTracks()[0];
+    $('sub').textContent = tr.label + ' · listen-only, you hear the pedal directly';
+    $('f-ctx').textContent = `audio: ${ctx.sampleRate} Hz · analysis every ${(512 / ctx.sampleRate * 1000).toFixed(1)} ms over a ${(2048 / ctx.sampleRate * 1000).toFixed(0)} ms window · input latency ~${((ctx.baseLatency || 0) * 1000).toFixed(0)} ms (display only)`;
+    $('hz').textContent = 'listening…';
+    flash('ok', 'Listening. Nothing is played back — you should be hearing the pedal directly.', 4000);
+  } catch (err) {
+    $('start').disabled = false;
+    flash('stop', explain(err));
+    await stop();
+  }
+}
+
+function openDevice(id) {
+  return navigator.mediaDevices.getUserMedia({audio: {deviceId: {exact: id}, channelCount: 1,
+    echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
+}
+
+function wireTestTone() {
+  if (!ctx) return;
+  if ($('test').checked && !osc) {
+    osc = ctx.createOscillator(); osc.type = 'sawtooth';
+    const m = Number($('test-f').value); osc.frequency.value = 440 * Math.pow(2, (m - 69) / 12);
+    oscGain = ctx.createGain(); oscGain.gain.value = 0.25;
+    osc.connect(oscGain).connect(worklet);
+    const hear = ctx.createGain(); hear.gain.value = 0.05;   // quiet, just so you know it is running
+    oscGain.connect(hear).connect(ctx.destination);
+    osc.start();
+    if (source) source.disconnect();
+    flash('warn', 'Test tone on — the input is ignored while this is ticked.', 3000);
+  } else if (!$('test').checked && osc) {
+    osc.stop(); osc.disconnect(); oscGain.disconnect(); osc = oscGain = null;
+    if (source) source.connect(worklet);
+  }
+}
+
+async function stop() {
+  if (osc) { try { osc.stop(); } catch (_) {} osc = oscGain = null; }
+  if (source) { try { source.disconnect(); } catch (_) {} source = null; }
+  if (worklet) { try { worklet.disconnect(); } catch (_) {} worklet = null; }
+  if (ctx) { try { await ctx.close(); } catch (_) {} ctx = null; }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  $('start').disabled = false; $('stop').disabled = true;
+  $('f-ctx').textContent = 'audio: idle';
+  $('needle').classList.remove('show');
+  $('level').style.width = '0';
+}
+function explain(err) {
+  const n = err && err.name;
+  if (n === 'NotAllowedError') return 'Microphone access was refused. Allow it for 127.0.0.1 in the browser and try again.';
+  if (n === 'NotFoundError') return 'No audio input found. Plug in the MG-300 (USB) and press Start again.';
+  if (n === 'NotReadableError') return 'The input is busy — if Rocksmith is running it holds the NUX exclusively (RS_ASIO). Close the game and retry.';
+  if (n === 'OverconstrainedError') return 'That input disappeared. Pick another one.';
+  return (err && err.message) || String(err);
+}
+$('start').onclick = start;
+$('stop').onclick = stop;
+$('device').onchange = async () => {
+  localStorage.setItem('rsm-notes-device', $('device').value);
+  if (!ctx) return;
+  try {
+    const s = await openDevice($('device').value);
+    if (source) source.disconnect();
+    stream.getTracks().forEach(t => t.stop());
+    stream = s; source = ctx.createMediaStreamSource(stream);
+    if (!osc) source.connect(worklet);
+    $('sub').textContent = stream.getAudioTracks()[0].label + ' · listen-only, you hear the pedal directly';
+  } catch (err) { flash('stop', explain(err)); }
+};
+
+/* ---------------- readings -> display ---------------- */
+function onReading(r) {
+  const db = r.rms > 0 ? 20 * Math.log10(r.rms) : -120;
+  $('level').style.width = Math.max(0, Math.min(100, (db + 60) / 60 * 100)) + '%';
+  $('level').className = db > -6 ? 'hot' : '';
+  $('level-v').textContent = (db <= -100 ? '−∞' : db.toFixed(0)) + ' dB';
+
+  if (!r.freq || r.clarity < 0.8) {
+    readings = [];
+    // Hold the last note briefly so a plucked note that decays into the gate does not blink off.
+    if (shown !== null && performance.now() - shownSince > 250) clearNote();
+    return;
+  }
+  const a4 = Number($('a4').value) || 440;
+  const m = 69 + 12 * Math.log2(r.freq / a4);
+  const rounded = Math.round(m);
+  readings.push(rounded); if (readings.length > 3) readings.shift();
+  // Two consecutive agreeing readings before the displayed note changes.
+  const agree = readings.length >= 2 && readings[readings.length - 1] === readings[readings.length - 2];
+  if (rounded !== shown && !agree) return;
+  if (rounded !== shown) { shown = rounded; shownSince = performance.now(); pushHistory(rounded); }
+  shownSince = performance.now();
+  const cents = (m - rounded) * 100;
+  drawNote(rounded, cents, r.freq);
+}
+function drawNote(m, cents, freq) {
+  const el = $('note'), nm = noteName(m);
+  el.innerHTML = `<span class="n">${nm[0]}</span>${nm.length > 1 ? '<span class="acc">♯</span>' : ''}<span class="oct">${octave(m)}</span>`;
+  el.className = 'note ' + (Math.abs(cents) <= 5 ? 'tuned' : 'live');
+  $('hz').innerHTML = `<b>${freq.toFixed(1)} Hz</b> · ${cents >= 0 ? '+' : '−'}${Math.abs(cents).toFixed(0)} cents`;
+  const nd = $('needle'); nd.classList.add('show'); nd.style.left = (50 + Math.max(-50, Math.min(50, cents))) + '%';
+  $('neck').innerHTML = OPEN.filter(([, o]) => m >= o && m - o <= 24).map(([s, o]) => `<span title="${s} string, fret ${m - o}">${s}·${m - o}</span>`).join('') || '';
+}
+function clearNote() {
+  shown = null; readings = [];
+  $('note').innerHTML = '<span class="n">—</span>'; $('note').className = 'note';
+  $('hz').textContent = 'listening…'; $('neck').innerHTML = ''; $('needle').classList.remove('show');
+  const last = history[history.length - 1]; if (last && !last.end) last.end = performance.now();
+  renderHistory();
+}
+function pushHistory(m) {
+  const now = performance.now();
+  const last = history[history.length - 1]; if (last && !last.end) last.end = now;
+  history.push({m, start: now, end: 0});
+  if (history.length > 16) history.shift();
+  renderHistory();
+}
+function renderHistory() {
+  $('history').innerHTML = '<span class="l">played</span>' + history.map((h, i) => {
+    const dur = ((h.end || performance.now()) - h.start) / 1000;
+    return `<span class="chip ${i === history.length - 1 && !h.end ? 'now' : ''}">${noteName(h.m)}${octave(h.m)}<small>${dur >= 0.1 ? dur.toFixed(1) + 's' : ''}</small></span>`;
+  }).join('');
+}
+
+/* ---------------- banner + heartbeat ---------------- */
+let bannerTimer;
+function flash(kind, text, ms = 7000) {
+  const el = $('banner'); el.className = 'banner show ' + kind; $('banner-text').textContent = text;
+  clearTimeout(bannerTimer); bannerTimer = setTimeout(() => { el.className = 'banner'; }, ms);
+}
+async function beat() {
+  try {
+    const r = await fetch('/api/status').then(r => r.json());
+    $('f-game').textContent = r.gameRunning ? 'Rocksmith is running — it holds the NUX exclusively, so this page may not get the input' : '';
+  } catch (_) {}
+}
+setInterval(beat, 20000); beat();
+if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) navigator.mediaDevices.enumerateDevices().then(() => listDevices().catch(() => {}));
+</script>
+</body>
+</html>

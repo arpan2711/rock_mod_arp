@@ -286,6 +286,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif path == "/settings":
                 with open(os.path.join(HERE, "settings.html"), "rb") as fh:
                     self._send(200, fh.read(), "text/html; charset=utf-8")
+            elif path == "/notes":
+                with open(os.path.join(HERE, "notes.html"), "rb") as fh:
+                    self._send(200, fh.read(), "text/html; charset=utf-8")
+            elif path == "/notes-dsp.js":
+                with open(os.path.join(HERE, "notes-dsp.js"), "rb") as fh:
+                    self._send(200, fh.read(), "application/javascript; charset=utf-8")
             elif path == "/api/settings":
                 self._send(200, settings_payload())
             elif path == "/api/keymap.png":

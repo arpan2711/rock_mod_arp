@@ -41,6 +41,10 @@ log always says which build is running.
 or `http://127.0.0.1:8734/settings`. Edits `RSMods.ini` in place and keeps `config/RSMods.ini` in
 step; `RSMods.exe` is no longer needed for anything we use. Details in §Mod settings page.
 
+**Guitar Notes page — built 12 Sep (backlog #14).** Song Manager → *guitar notes*, or
+`http://127.0.0.1:8734/notes`. Listen-only: the browser reads the NUX and shows the note; you keep
+hearing the pedal directly, so nothing is added to the sound. Details in §Guitar Notes page.
+
 **PICK UP HERE — next session: #12 (live scrub while paused), then #11 (menu tone, decide A/B).**
 
 ---
@@ -195,7 +199,7 @@ is its own commit, so a failing one can be reverted individually with
 |---|---|
 | `RSMods-src/` | RSMods 1.2.7.4 fork source (`keremcanb/RSMods_for_Cracked_Rocksmith_2014` @ `9a63acd`) with the 1.2.8.x fixes ported in |
 | `scripts/` | `build-dll.ps1`, `install-dll.ps1`, `restore-dll.ps1`, plus the game-folder batch files |
-| `SongManager/` | Local web app: song enable/disable in `dlc\` **and the RSMods settings page** (pure-stdlib Python). Deployed by copying to `Y:\...\SongManager\` |
+| `SongManager/` | Local web app: song enable/disable in `dlc\`, **the RSMods settings page** and **the Guitar Notes page** (pure-stdlib Python server; DSP in the browser). Deployed by copying to `Y:\...\SongManager\` |
 | `config/` | Snapshots of the deployed `RSMods.ini`, `Rocksmith.ini`, `steam_emu.ini` |
 | `backups/` | DLL backups made by `install-dll.ps1` — **untracked, do not delete** |
 | `ROCKSMITH-PROJECT-NOTES.md` | Full setup and troubleshooting history |
@@ -485,6 +489,7 @@ Ranked for a practice tool. Effort is a guess.
 | 9 | **Switch the MG-300's preset from the game** — the MK2 takes MIDI over USB: CC#60 (or #73) on channel 1, value = preset number selects a preset; program change does *not* work and there is no bypass CC, so "mute the pedal" = switch to a user-made silent preset. Two uses: (a) make `\` also flip the pedal between your playing preset and a silent one, closing the "physical amp still makes noise" gap; (b) per-song pedal preset, the way `AutoTuneForSong` already sends tuning pedals a program change over WinMM MIDI out | medium; USB-MIDI on this pedal is reported as fiddly | `Mods/Midi.cpp` (already has a MIDI-out device picker + send), `ToggleAmpSourceKey` handler |
 | 10 | ~~**`LatencyBuffer=1`**~~ — tried 12 Sep, crackles; 2 is the floor | — | `Rocksmith.ini` |
 | 13 | ~~**Settings page in Song Manager**~~ — **done 12 Sep**, see §Mod settings page. Spec kept below for the record | — | `SongManager/settings.html`, `rsmods_ini.py` |
+| 14 | ~~**Guitar Notes page**~~ — **done 12 Sep**, see §Guitar Notes page. Possible follow-ons: bass mode (4096 window), chord detection (real DSP work), a browser amp sim (pay ~20 ms) | — | `SongManager/notes.html`, `notes-dsp.js` |
 | 12 | **Live scrub while paused** — try `SeekOnEvent` on the paused voice so the highway redraws at the new spot while paused, instead of only on resume. Keep the deferred seek as the fallback if the highway does not follow | small | pause handler in `dllmain.cpp` |
 | 11 | **Menu / tuner tone** — the game's out-of-song tone is a hard-wired high-gain preset and Rocksmith has no default-tone setting (Ubisoft confirmed on the Steam forums). Two ways round it, decision pending: **A** clean tone saved to Tone Designer slot 2–4, pressed by hand after every song; **B** (recommended) `MuteGameAmpOutsideSongs=on` — hold `Mixer_Player1` at 0 whenever `currentMenu` is not a song mode, so menus / tuner / lessons are pedal-only and the game amp returns when a song starts, respecting the `'` toggle. ~20 lines on the amp-toggle plumbing | small | `VolumeControl::MutePlayer`, `songModes`, the per-frame block in `Hook_EndScene` |
 
@@ -524,11 +529,43 @@ installed`), the `RSMODS Version:` line from `RSMods_debug.txt`, `LatencyBuffer`
 RS_ASIO buffer / drivers, last 10 log lines.
 
 **Deploy:** the server runs from `Y:\...\SongManager\`, which is a copy. After editing in the
-repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html` over. The repo is found
+repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html`, `notes.html`, `notes-dsp.js` over. The repo is found
 from there via `ROCK_MOD_ARP` env, else the parent of the script, else `~\rock_mod_arp`.
 
 **Not done:** editing `Rocksmith.ini` / `RS_ASIO.ini` (display only, as specified). Reload
 in-game is still `Ctrl+A`; the page says so.
+
+## Guitar Notes page (built 12 Sep)
+
+`/notes` on the Song Manager server. Plug the MG-300 in, press *Start listening*, play.
+
+**Design decision:** listen-only. Browsers only get shared-mode WASAPI (never ASIO), so any
+audio passed *through* the browser would arrive ~15–35 ms late — far worse than the game's
+64-sample ASIO path. Since the pedal is heard from its own output, the page never plays sound
+back: it only reads the input for detection. The readout lags the pluck by ~50 ms, which you
+see but cannot hear. If you ever want a browser amp sim, that is the latency you would pay.
+
+| Piece | File |
+|---|---|
+| Page | `SongManager/notes.html` |
+| Detector (AudioWorklet + pure function) | `SongManager/notes-dsp.js` — McLeod pitch method: normalised autocorrelation, lag range limited to 55–1500 Hz, 2048-sample window, new estimate every 512 samples |
+| Tests (23) | `node SongManager\test_notes_dsp.js` — every open string, drop D, 7-string B1, fretted to E6, the E2 weak-fundamental octave trap, ±20 cents, silence/noise rejection, speed (1.4 ms per analysis, budget 10.7) |
+| Routes | `server.py`: `GET /notes`, `GET /notes-dsp.js` |
+
+**What it shows:** the note name and octave (green when within ±5 cents), a cents needle,
+Hz, where that note sits on a standard-tuned neck (`E·2  A·9` …), an input level meter, and
+a strip of the last 16 notes with how long each was held. Two consecutive agreeing readings
+are required before the display changes, so it does not flicker on attack transients. Gate
+default −48 dBFS, adjustable. A4 reference adjustable (415–466).
+
+**Test tone:** tick it and the page feeds itself a sawtooth at a chosen note — a way to see
+the detector work with no guitar plugged in. The input is ignored while it is on.
+
+**Device:** picks any input whose name contains "NUX" automatically, remembers a manual
+choice. When Rocksmith is running, RS_ASIO holds the NUX exclusively and the page says so.
+
+**Limits:** monophonic — single notes only, chords are not identified. Guitar range: bass low
+E (41 Hz) is below what the window resolves; a bass mode would need a 4096 window.
 
 ### #13 — the original spec (as agreed 12 Sep, kept for the record)
 
