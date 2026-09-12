@@ -298,6 +298,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif path == "/fretboard.js":
                 with open(os.path.join(HERE, "fretboard.js"), "rb") as fh:
                     self._send(200, fh.read(), "application/javascript; charset=utf-8")
+            elif path == "/favicon.svg":
+                with open(os.path.join(HERE, "icon.svg"), "rb") as fh:
+                    self._send(200, fh.read(), "image/svg+xml")
+            elif path == "/favicon.ico":
+                with open(os.path.join(HERE, "favicon.ico"), "rb") as fh:
+                    self._send(200, fh.read(), "image/x-icon")
             elif path == "/api/settings":
                 self._send(200, settings_payload())
             elif path == "/api/keymap.png":

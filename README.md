@@ -533,7 +533,14 @@ RS_ASIO buffer / drivers, last 10 log lines.
 
 **Deploy:** the server runs from `Y:\...\SongManager\`, which is a copy. After editing in the
 repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html`, `notes.html`, `notes-dsp.js`,
-`exercises.js`, `fretboard.js` over. The repo is found
+`exercises.js`, `fretboard.js`, `icon.svg`, `favicon.ico`, `icon-256.png` over.
+
+**Icon (12 Sep).** `SongManager/icon.svg` is the source: a plectrum with three list lines, original
+artwork, blue gradient. It is the tab favicon on all three pages (`/favicon.svg`, with
+`/favicon.ico` as the fallback). `scripts\make-icon.py` rebuilds `favicon.ico` (16–256) and
+`icon-256.png` from the same geometry with Pillow. `Y:\...\SongManager\Song Manager.lnk` launches
+the batch file with that icon; pin it or copy it to the desktop. Checked at 16/32/64/128/256 px on
+both themes with a headless-Edge preview sheet. The repo is found
 from there via `ROCK_MOD_ARP` env, else the parent of the script, else `~\rock_mod_arp`.
 
 **Not done:** editing `Rocksmith.ini` / `RS_ASIO.ini` (display only, as specified). Reload

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Song Manager: a plectrum with three list lines. Original artwork, no trademarked shapes. -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3dbcff"/>
+      <stop offset="1" stop-color="#0b6fa8"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 60 C24 52 6 36 6 21 C6 9 17 4 32 4 C47 4 58 9 58 21 C58 36 40 52 32 60 Z" fill="url(#g)"/>
+  <g stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none">
+    <line x1="21" y1="21" x2="43" y2="21"/>
+    <line x1="23" y1="30" x2="41" y2="30"/>
+    <line x1="26" y1="39" x2="38" y2="39"/>
+  </g>
+</svg>
