@@ -14,10 +14,10 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 | Thing | State | Since |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | overlay-details build, SHA-256 `6ecd9865 c9587daa 88bfb7c8 f99874aa 8e63687b 2a0f808a 1df496c3 a84c0907` | 12 Sep 00:18 |
+| `Y:\...\xinput1_3.dll` | pause/scrub build, SHA-256 `6b6af655 ab5e3e5e ab62e3f8 81fe9880 5ee5673c d02b5871 5dd8d5f4 48d6379f` | 12 Sep 01:28 |
 | RS_ASIO v0.7.5 | `avrt.dll` + `RS_ASIO.dll` + `RS_ASIO.ini` in the game folder; input `NUX Audio` ch 0, output WASAPI, **64-sample buffer** | 11 Sep |
 | `Rocksmith.ini` | `LatencyBuffer=2` — the floor: 1 crackles on this PC; everything else as before | 12 Sep |
-| `RSMods.ini` | keys re-mapped to one cluster, no Ctrl: `RRSpeedDownKey`, `LoopClearKey` added, `RewindKey = VK_BACK`, `ToggleAmpSourceKey = VK_OEM_7`; plus `DisplayCurrentAccuracy`, `DisplayNoteStreak`, `DisplayLoopPasses` all `on`; nothing removed | 12 Sep |
+| `RSMods.ini` | keys re-mapped to one cluster, no Ctrl: `RRSpeedDownKey`, `LoopClearKey` added, `RewindKey = VK_BACK`, `ToggleAmpSourceKey = VK_OEM_7`; plus `PauseSongKey = P`, `ForwardKey = VK_DELETE`, `ForwardBy = 5000`, and `DisplayCurrentAccuracy`, `DisplayNoteStreak`, `DisplayLoopPasses` all `on`; nothing removed | 12 Sep |
 | In-game calibration | redone on the ASIO input path, on the usual NUX preset | 11 Sep |
 | Windows default input | still the webcam — **irrelevant now**, RS_ASIO binds the NUX by name | — |
 
@@ -29,10 +29,9 @@ samples with `LatencyBuffer=2` (a full session, clean — `1` crackles, so this 
 accuracy / streak / loop-pass overlay in Learn A Song; the no-Ctrl key cluster; calibration
 at full refresh rate; the four 9 Sep ports.
 
-**Not yet exercised:** the Score Attack overlay line (score / multiplier / perfect / late) —
-nobody has played a Score Attack song since it went in. Everything else on the checklist
-is ticked. **Left here on 12 Sep, working; next thing to decide is the menu tone (backlog
-#11).**
+**Not yet tested:** **pause / scrub** (`P`, `Delete`, built 01:28 on 12 Sep) — the first test
+answers whether the note highway freezes with the audio; see §Pause and scrub. Also still
+unexercised: the Score Attack overlay line. Next decision: the menu tone (backlog #11).
 
 ---
 
@@ -50,6 +49,7 @@ open); the ini files can be edited any time and are read at launch.
 | spike only at the start of each note, then fine | not a rollback — recalibrate (tuner screen on the way into a song, lower-right, Enter) |
 | game says no cable / notes don't register | step 2 |
 | no guitar at all in `GAME AMP`, `PEDAL ONLY` on screen | press `'` — you are muted on purpose |
+| song audio stuck paused, or highway and audio out of step after `P` | press `P` once more; if still stuck, Esc → the game's own pause menu → resume, then blank `PauseSongKey = ` in `RSMods.ini` and tell me |
 | crash, white screen, hang, anything about the overlay text | step 3 |
 | the two new `RSMods.ini` lines bother you | step 4 |
 
@@ -86,7 +86,8 @@ Or step back one build at a time by copying a backup over `Y:\...\xinput1_3.dll`
 | `20260911-231651` | `1055e23` (`ab7e5eec…`) | + accuracy overlay |
 | `20260912-*` | `95e1650` (`ac288994…`) | + note streak line |
 | `20260912-001815` | `0827a56` (`2c2a5aa4…`) | + `RRSpeedDownKey`, `LoopClearKey` |
-| *(installed)* | overlay-details commit (`6ecd9865…`) | + hit/total, Score Attack line, loop pass counter |
+| `20260912-012814` | `659542c` (`6ecd9865…`) | + hit/total, Score Attack line, loop pass counter |
+| *(installed)* | pause/scrub commit (`6b6af655…`) | + `P` pause, `Delete` forward, scrub while paused |
 
 `backups/` is untracked — do not delete it. Any build can also be rebuilt from its commit
 with `git checkout <hash> -- RSMods-src && scripts\build-dll.ps1`.
@@ -95,9 +96,10 @@ Verify with `Get-FileHash 'Y:\Rocksmith 2014 Edition - Remastered\xinput1_3.dll'
 
 **Step 4 — `RSMods.ini` lines**
 
-`ToggleAmpSourceKey`, `RRSpeedDownKey`, `LoopClearKey`, `DisplayCurrentAccuracy`,
-`DisplayNoteStreak` and `DisplayLoopPasses` can simply be deleted. All have DLL-side defaults
-(`VK_OEM_7`, `VK_OEM_MINUS`, `VK_OEM_5`, `on`, `on`, `on`), so deleting the line does not turn the feature off —
+`ToggleAmpSourceKey`, `RRSpeedDownKey`, `LoopClearKey`, `PauseSongKey`, `ForwardKey`,
+`DisplayCurrentAccuracy`, `DisplayNoteStreak` and `DisplayLoopPasses` can simply be deleted.
+All have DLL-side defaults (`VK_OEM_7`, `VK_OEM_MINUS`, `VK_OEM_5`, `P`, `VK_DELETE`, `on`,
+`on`, `on`), so deleting the line does not turn the feature off —
 set the `Display*` ones to `off`, or a key to blank (`LoopClearKey = `), for that. To get
 the old Ctrl-only layout back: `RewindKey = VK_OEM_MINUS`, `ToggleAmpSourceKey = VK_OEM_5`,
 blank the two new keys.
@@ -154,6 +156,12 @@ Do these in order. Tick them off here as they pass.
       `pass N` line appears and after each wrap becomes `pass N, last pass 92%`; setting or
       clearing the loop resets it to `pass 1`. In Score Attack a `score …, x4 (best x8), …`
       line appears under the streak.
+- [ ] **Pause / scrub** — `P` mid-song: audio stops **and the highway stops**; `P` again
+      resumes where it was. Then `P`, `Backspace` × 2, `P`: resumes 10 s earlier; same with
+      `Delete` forwards. `Delete` while playing jumps 5 s ahead. Esc over a mod-pause and
+      resuming from the menu does not leave things stuck. Check `RSMods_debug.txt` for the
+      `(PAUSE) Resuming` line — if `timer now reads` differs from `Paused at`, the game's
+      clock kept running while the audio was paused (tell me; it changes the design).
 - [x] A normal practice session *(12 Sep)* — loops (`[` `]`), rewind (`-`), RR speed (`=`) all
       still behave as in `ROCKSMITH-PROJECT-NOTES.md` §0
 
@@ -413,6 +421,39 @@ branch fires every frame until the seek lands, so `loopWrapPending` gates it to 
 
 This is also the data backlog item #3 (loop pass counter / auto speed ladder) needs to
 gate on "clean pass" — `ReadNoteStats()` is the hook.
+
+---
+
+## Pause and scrub — `P`, `Backspace`, `Delete`
+
+```ini
+[Keybinds]
+PauseSongKey = P
+RewindKey = VK_BACK
+ForwardKey = VK_DELETE
+[Mod Settings]
+RewindBy = 5000
+ForwardBy = 5000
+```
+
+`P` pauses the song in place with no pause menu: it pauses the song's Wwise event
+(`ExecuteActionOnEvent("Play_<key>", Pause)`), the same handle rewind and the loop-wrap
+seek already use. The note highway follows the song audio — that is why rewind moves the
+notes — so pausing the audio should freeze the highway too. **That is the thing the first
+test confirms**; the `(PAUSE) Resuming` log line records what the game's timer read while
+paused, so a running clock would show up as a mismatch.
+
+While paused, `Backspace` / `Delete` do not seek live; they move a resume point, shown
+top-centre as `PAUSED  1:42  ->  1:32`, and `P` seeks there and resumes. Deferring the seek
+means the result does not depend on how Wwise treats a seek on a paused voice. If a live
+seek turns out to redraw the highway while paused, that is a later upgrade.
+
+`Delete` while playing is the mirror of `Backspace`: seek to `now + ForwardBy`. No cap at the
+song end — seeking past it ends the song, which is what you would expect.
+
+Guards: the loop-wrap seek is skipped while paused (otherwise a pause sitting on the loop end
+would fire it every frame); leaving the song while paused clears the flag. Gated on
+`AllowRewind` and the playing screens only, like rewind.
 
 ---
 

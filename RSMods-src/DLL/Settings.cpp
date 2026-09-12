@@ -25,6 +25,8 @@ void Settings::Initialize()
 		{"LoopEndKey", "U"},
 		{"LoopClearKey", "VK_OEM_5"},
 		{"RewindKey", "Z"},
+		{"ForwardKey", "VK_DELETE"},
+		{"PauseSongKey", "P"},
 
 		{"MasterVolumeKey", "5"},
 		{"SongVolumeKey", "6"},
@@ -113,6 +115,7 @@ void Settings::Initialize()
 		{"AlternativeOutputSampleRate", 48000},
 		{"LoopingLeadUp", 0},
 		{"RewindBy", 0},
+		{"ForwardBy", 5000},
 		{"CustomNSPTimeLimit", 10000},
 
 		{"GuitarSpeakDelete", 0},
@@ -196,6 +199,8 @@ void Settings::ReadKeyBinds() {
 			{ "LoopEndKey", reader.GetValue("Keybinds", "LoopEndKey", "U")},
 			{ "LoopClearKey", reader.GetValue("Keybinds", "LoopClearKey", "VK_OEM_5")},
 			{ "RewindKey", reader.GetValue("Keybinds", "RewindKey", "Z")},
+			{ "ForwardKey", reader.GetValue("Keybinds", "ForwardKey", "VK_DELETE")},
+			{ "PauseSongKey", reader.GetValue("Keybinds", "PauseSongKey", "P")},
 
 			{ "MasterVolumeKey", reader.GetValue("Audio Keybindings", "MasterVolumeKey", "5") },
 			{ "SongVolumeKey", reader.GetValue("Audio Keybindings", "SongVolumeKey", "6") },
@@ -241,6 +246,7 @@ void Settings::ReadModSettings() {
 		{"AlternativeOutputSampleRate", reader.GetLongValue("Mod Settings", "AlternativeOutputSampleRate", 48000)},
 		{"LoopingLeadUp", reader.GetLongValue("Mod Settings", "LoopingLeadUp", 0)},
 		{"RewindBy", reader.GetLongValue("Mod Settings", "RewindBy", 0)},
+		{"ForwardBy", reader.GetLongValue("Mod Settings", "ForwardBy", 5000)},
 		{"CustomNSPTimeLimit", reader.GetLongValue("Mod Settings", "CustomNSPTimeLimit", 10000)},
 
 		{"GuitarSpeakDelete", reader.GetLongValue("Guitar Speak", "GuitarSpeakDeleteWhen", 0)},

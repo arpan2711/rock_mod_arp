@@ -29,7 +29,7 @@ GROUPS = {
     # name: (fill colour, legend text)
     'loop':   ((66, 133, 244),  'Loop'),
     'speed':  ((255, 152, 0),   'Riff Repeater speed'),
-    'rewind': ((52, 199, 89),   'Rewind'),
+    'rewind': ((52, 199, 89),   'Pause / scrub'),
     'amp':    ((175, 82, 222),  'Amp source (game amp vs pedal)'),
     'mod':    ((120, 122, 130), 'Modifier / settings'),
     'game':   ((230, 230, 235), 'Rocksmith itself'),
@@ -40,7 +40,9 @@ GROUPS = {
 SHORTCUTS = {
     '-':         ('speed',  'Speed\n-2%', None),
     '=':         ('speed',  'Speed\n+2%', None),
-    'Backspace': ('rewind', 'Rewind 5 s', None),
+    'Backspace': ('rewind', 'Back 5 s', None),
+    'Delete':    ('rewind', 'Fwd 5 s', None),
+    'P':         ('rewind', 'Pause /\nresume', None),
     '[':         ('loop',   'Loop\nstart', None),
     ']':         ('loop',   'Loop\nend', None),
     '\\':        ('loop',   'Clear loop', None),
@@ -143,11 +145,12 @@ ny = Y0 + board_h + 50
 notes = [
     'Workflow:  [ and ] around a few bars  ->  tap - to slow it down  ->  work it  ->  tap = past 100%',
     'so real tempo feels easy afterwards  ->  \\ clears the loop.',
-    'Loop and speed keys work in Learn A Song, Non-Stop Play and Riff Repeater; Rewind only while a song is playing.',
-    'Tunables in RSMods.ini:  RewindBy = 5000 ms,  RRSpeedInterval = 2 %,  LoopingLeadUp = 2000 ms run-in before the loop.',
+    'P pauses the song in place, no menu. While paused, Backspace / Delete move the resume point (shown top-centre); P resumes there.',
+    'Loop and speed keys work in Learn A Song, Non-Stop Play and Riff Repeater; pause / scrub only while a song is playing.',
+    'Tunables in RSMods.ini:  RewindBy / ForwardBy = 5000 ms,  RRSpeedInterval = 2 %,  LoopingLeadUp = 2000 ms run-in before the loop.',
     '\'  mutes the game\'s guitar tone only - the backing track keeps playing. "PEDAL ONLY" shows top-left while muted.',
     'Top-right overlay while playing:  song timer  /  accuracy %  /  "12 in a row, best 37" streak.',
-    'Ctrl + [ or ] still clears the loop and Ctrl + = still slows down, for muscle memory. Nothing lives on the nav block.',
+    'Ctrl + [ or ] still clears the loop and Ctrl + = still slows down, for muscle memory. Delete is the only nav-block key in use.',
 ]
 for t in notes:
     d.text((nx, ny), t, font=F_NOTE, fill=TEXT_DIM)

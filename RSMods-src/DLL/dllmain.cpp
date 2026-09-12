@@ -306,6 +306,50 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM keyPressed, LPARAM lParam) {
 				}
 			}
 
+			// Pause / scrub mod. Pauses the song where it is, without the pause menu. The note highway follows the song
+			// audio (that is why rewind works), so pausing the Wwise event pauses the song. While paused, rewind and forward
+			// move a target that is seeked to on resume, so the result does not depend on how Wwise treats a paused seek.
+			else if (keyPressed == Settings::GetKeyBind("PauseSongKey") && Settings::ReturnSettingValue("AllowRewind") == "on" && MemHelpers::Contains(D3DHooks::currentMenu, learnASongPlaying)) {
+				const std::string playEvent = "Play_" + MemHelpers::GetSongKey();
+
+				if (!songPaused) {
+					pausedAt = MemHelpers::SongTimer();
+					scrubTarget = pausedAt;
+					Wwise::SoundEngine::ExecuteActionOnEvent(playEvent.c_str(), AkActionOnEventType_Pause, 0x1234, 0, AkCurveInterpolation_Linear);
+					songPaused = true;
+					_LOG("(PAUSE) Paused at " << pausedAt << "s" << std::endl);
+				}
+				else {
+					// The timer reading here tells us whether the game's clock froze with the audio or kept running.
+					_LOG("(PAUSE) Resuming. Paused at " << pausedAt << "s, timer now reads " << MemHelpers::SongTimer() << "s, resuming from " << scrubTarget << "s" << std::endl);
+
+					if (scrubTarget != pausedAt) {
+						Wwise::SoundEngine::SeekOnEvent(playEvent.c_str(), 0x1234, (AkTimeMs)(scrubTarget * 1000), false);
+						MemHelpers::SetGreyNoteTimer(scrubTarget);
+					}
+
+					Wwise::SoundEngine::ExecuteActionOnEvent(playEvent.c_str(), AkActionOnEventType_Resume, 0x1234, 0, AkCurveInterpolation_Linear);
+					songPaused = false;
+				}
+			}
+
+			// Scrub while paused: move the resume point rather than seeking live. Sits ahead of the live rewind handler on purpose.
+			else if (songPaused && (keyPressed == Settings::GetKeyBind("RewindKey") || keyPressed == Settings::GetKeyBind("ForwardKey")) && Settings::ReturnSettingValue("AllowRewind") == "on" && MemHelpers::Contains(D3DHooks::currentMenu, learnASongPlaying)) {
+				const int stepMs = keyPressed == Settings::GetKeyBind("ForwardKey") ? Settings::GetModSetting("ForwardBy") : -Settings::GetModSetting("RewindBy");
+				scrubTarget += stepMs / 1000.f;
+				if (scrubTarget < 0.f)
+					scrubTarget = 0.f;
+				_LOG("(PAUSE) Resume point now " << scrubTarget << "s" << std::endl);
+			}
+
+			// Skip forward by X seconds mod. Mirror of rewind below.
+			else if (keyPressed == Settings::GetKeyBind("ForwardKey") && Settings::ReturnSettingValue("AllowRewind") == "on" && MemHelpers::Contains(D3DHooks::currentMenu, learnASongPlaying)) {
+				AkTimeMs seekTo = (AkTimeMs)((MemHelpers::SongTimer() * 1000) + Settings::GetModSetting("ForwardBy"));
+				Wwise::SoundEngine::SeekOnEvent(std::string("Play_" + MemHelpers::GetSongKey()).c_str(), 0x1234, seekTo, false);
+				MemHelpers::SetGreyNoteTimer(seekTo / 1000.f);
+				_LOG("(FORWARD) Seeked to " << seekTo << "ms." << std::endl);
+			}
+
 			// Rewind song by X seconds mod.
 			else if (keyPressed == Settings::GetKeyBind("RewindKey") && Settings::ReturnSettingValue("AllowRewind") == "on" && MemHelpers::Contains(D3DHooks::currentMenu, learnASongPlaying)) {
 				// SongTimer is stored in seconds, while RewindBy is stored in milliseconds.
@@ -1087,6 +1131,27 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 				pDevice);
 		}
 
+		// Pause / scrub mod. Leaving the song (quit, finished) while mod-paused takes the Wwise event with it, so forget the pause.
+		if (songPaused && !MemHelpers::Contains(currentMenu, learnASongModes))
+			songPaused = false;
+
+		if (songPaused) {
+			std::string pausedText = "PAUSED  " + ConvertFloatTimeToStringTime(pausedAt);
+			if (scrubTarget != pausedAt)
+				pausedText += "  ->  " + ConvertFloatTimeToStringTime(scrubTarget);
+
+			MemHelpers::DX9DrawText(
+					pausedText,
+					whiteText,
+					static_cast<int>(WindowSize.width / 2.0f - WindowSize.width / 38.4f), // 50 pixels left of center in 1920x1080 resolution
+					static_cast<int>(WindowSize.height / 54.0f),                          // 20 pixels from top, above the loop text
+					static_cast<int>(WindowSize.width / 2.0f + WindowSize.width / 38.4f), // 50 pixels right of center
+					static_cast<int>(WindowSize.height / 16.0f),                          // 120 pixels from top
+					pDevice,
+					{ NULL, NULL },
+					DT_CENTER | DT_NOCLIP);
+		}
+
 		// Looping mod.
 		if (Settings::ReturnSettingValue("AllowLooping") == "on" && (loopStart != NULL || loopEnd != NULL)) {
 
@@ -1136,7 +1201,7 @@ Wwise::SoundEngine::SetRTPCValue("P1_InputVol_Calibration_Return", NewInputVolum
 				}
 
 				// If not paused AND we are at the end of the loop, seek to the start of the loop.
-				else if (loopStart != NULL && loopEnd != NULL && (MemHelpers::SongTimer() >= loopEnd)) {
+				else if (loopStart != NULL && loopEnd != NULL && (MemHelpers::SongTimer() >= loopEnd) && !songPaused) {
 					// This branch runs every frame until the seek lands, so count the pass once per wrap.
 					if (!loopWrapPending) {
 						const NoteStats stats = ReadNoteStats();

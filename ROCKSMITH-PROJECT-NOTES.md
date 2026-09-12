@@ -16,7 +16,9 @@ One key each, no modifiers, all in the right-hand cluster of the main block (re-
 
 | Key | Does |
 |---|---|
-| `Backspace` | **Rewind 5 seconds** instantly |
+| `Backspace` | **Back 5 seconds** instantly |
+| `Delete` | **Forward 5 seconds** instantly |
+| `P` | **Pause / resume in place**, no pause menu. While paused, `Backspace` / `Delete` move the resume point (shown top-centre) and `P` resumes from there |
 | `[` | Set **loop start** |
 | `]` | Set **loop end** — the section then repeats forever |
 | `\` | **Clear** the loop |
@@ -34,7 +36,8 @@ then tap `=` past 100% so real tempo feels easy afterwards; `\` clears the loop.
 
 | Setting | Now | What it does |
 |---|---|---|
-| `RewindBy` | `5000` | Rewind distance, ms |
+| `RewindBy` | `5000` | Back-scrub distance, ms |
+| `ForwardBy` | `5000` | Forward-scrub distance, ms |
 | `LoopingLeadUp` | `2000` | Run-in *before* the loop point each pass, ms. Set 0 for a hard cut |
 | `RRSpeedInterval` | `2` | Speed step size, % |
 | `LinearRiffRepeater` | `on` | Makes the speed % honest — stock Rocksmith's 68% is really 50% |
@@ -42,7 +45,7 @@ then tap `=` past 100% so real tempo feels easy afterwards; `\` clears the loop.
 Keys are set with `VK_` names (`LoopStartKey = VK_OEM_4` etc). Valid names live in
 `DLL/Settings.hpp` → `keyMap`. **An unrecognised name binds silently to nothing**, so
 check the table rather than guessing. `[`=`VK_OEM_4`, `]`=`VK_OEM_6`, `\`=`VK_OEM_5`,
-`'`=`VK_OEM_7`, `=`=`VK_OEM_PLUS`, `-`=`VK_OEM_MINUS`, `Backspace`=`VK_BACK`. Function keys
+`'`=`VK_OEM_7`, `=`=`VK_OEM_PLUS`, `-`=`VK_OEM_MINUS`, `Backspace`=`VK_BACK`, `Delete`=`VK_DELETE`. Function keys
 `VK_F1`–`VK_F24` all exist.
 
 Backup before these were set: `RSMods.ini.before-practice`.

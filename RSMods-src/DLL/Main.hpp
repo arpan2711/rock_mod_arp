@@ -55,6 +55,12 @@ bool displayCurrentVolume = false;
 auto displayVolumeStartTime = std::chrono::steady_clock::time_point(); // Defaults to epoch time
 unsigned int currentVolumeIndex = 0; // Mixer volume to change. 0 - Master, 1 - Song, 2 - P1, 3 - P2, 4 - Mic, 5 - VO, 6 - SFX
 
+// Pause / scrub mod. The song is paused by pausing its Wwise event; while paused, rewind / forward move scrubTarget,
+// which is seeked to on resume.
+bool songPaused = false;
+float pausedAt = 0.f;    // song time when the pause key was pressed
+float scrubTarget = 0.f; // where the song resumes from; equals pausedAt until a scrub key is pressed
+
 // Loop passes. Counted at the loop-wrap seek; the note counters are cumulative for the session, so a pass's accuracy
 // is the delta since the previous wrap. Reset whenever the loop points change.
 int loopPass = 0;                 // 0 = no loop, 1 = first time through
