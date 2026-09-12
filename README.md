@@ -493,6 +493,7 @@ Ranked for a practice tool. Effort is a guess.
 | 13 | ~~**Settings page in Song Manager**~~ — **done 12 Sep**, see §Mod settings page. Spec kept below for the record | — | `SongManager/settings.html`, `rsmods_ini.py` |
 | 14 | ~~**Guitar Notes page**~~ — **done 12 Sep**, see §Guitar Notes page. Possible follow-ons: bass mode (4096 window), chord detection (real DSP work), a browser amp sim (pay ~20 ms) | — | `SongManager/notes.html`, `notes-dsp.js` |
 | 15 | ~~**Exercises in Guitar Notes**~~ — **done 12 Sep**, 21 of them, see §Exercises. Follow-ons: more keys/positions (one line each), 3-notes-per-string shapes, a practice log of exercise runs (ties into #5) | — | `SongManager/exercises.js` |
+| 16 | ~~**Practice page**~~ — **done 12 Sep**, see §Practice page. Follow-ons: 3-notes-per-string, arpeggios, session log; migrate `notes.html` onto `listen.js` | — | `SongManager/practice.html`, `practice.js`, `listen.js` |
 | 12 | **Live scrub while paused** — try `SeekOnEvent` on the paused voice so the highway redraws at the new spot while paused, instead of only on resume. Keep the deferred seek as the fallback if the highway does not follow | small | pause handler in `dllmain.cpp` |
 | 11 | **Menu / tuner tone** — the game's out-of-song tone is a hard-wired high-gain preset and Rocksmith has no default-tone setting (Ubisoft confirmed on the Steam forums). Two ways round it, decision pending: **A** clean tone saved to Tone Designer slot 2–4, pressed by hand after every song; **B** (recommended) `MuteGameAmpOutsideSongs=on` — hold `Mixer_Player1` at 0 whenever `currentMenu` is not a song mode, so menus / tuner / lessons are pedal-only and the game amp returns when a song starts, respecting the `'` toggle. ~20 lines on the amp-toggle plumbing | small | `VolumeControl::MutePlayer`, `songModes`, the per-frame block in `Hook_EndScene` |
 
@@ -533,7 +534,51 @@ RS_ASIO buffer / drivers, last 10 log lines.
 
 **Deploy:** the server runs from `Y:\...\SongManager\`, which is a copy. After editing in the
 repo, copy `server.py`, `rsmods_ini.py`, `settings.html`, `ui.html`, `notes.html`, `notes-dsp.js`,
-`exercises.js`, `fretboard.js`, `icon.svg`, `favicon.ico`, `icon-256.png` over.
+`exercises.js`, `fretboard.js`, `practice.html`, `practice.js`, `listen.js`, `icon.svg`, `favicon.ico`,
+`icon-256.png` over.
+
+**Tab strip (12 Sep).** Every page carries the same strip under its masthead — *song manager ·
+guitar notes · practice · mod settings* — with the current tab underlined in the accent colour.
+Markup and CSS are duplicated per page (there is no template layer); adding a page means adding
+its link in all four.
+
+## Practice page (built 12 Sep, backlog #16)
+
+Song Manager → *practice*, or `http://127.0.0.1:8734/practice`. A scale in a key, laid out in
+positions across the neck, run as many times as you set.
+
+**Use:** pick scale and key, tick the positions (all by default), set *times through*, *Start
+listening*, *Begin*. The page prompts the next note (name plus suggested string·fret), lights the
+current position on the fretboard with the rest of the scale faint behind it, shows *time n of N ·
+position k of K · note i of M*, a progress bar over the whole session, and the same stats as the
+exercises (wrong, notes/min, accuracy). Settings persist in `localStorage['rsm-practice']`.
+Options: *any octave counts*, metronome button + bpm.
+
+**Positions.** One five-fret window per anchor tone on the low E string in the first octave,
+starting one fret below it (first finger behind, Leavitt / CAGED style). Anchors for a seven-note
+scale are its pentatonic tones — the scale minus its tritone pair (F and B in C major) — which
+yields exactly the five CAGED positions: C major = frets 0–4, 2–6, 4–8, 7–11, 9–13; G major = 0–4
+(open G shape), 2–6 (E), 4–8 (D), 6–10 (C), 9–13 (A). Pentatonics anchor on all five tones (the
+five boxes), the blues scale drops the ♭5, harmonic minor anchors on every tone thinned so no two
+windows start a fret apart. Relative keys share positions (A minor = C major).
+
+**Sequence.** Each chosen position is played up and back down; the chosen positions in order
+make one *time through*; that repeats N times as one continuous run. Where a segment ends on
+the pitch the next one starts with, the repeat is dropped — the run stays musical and the
+detector, which reports notes on change, can follow it.
+
+| Piece | File |
+|---|---|
+| Page | `SongManager/practice.html` |
+| Planner | `SongManager/practice.js` — `positions(rootPc, formula)`, `neck(rootPc, formula)`, `plan({key, scale, positions, reps})` → `{seq, segments, positions, chosen}`, `where(plan, index)` |
+| Listener | `SongManager/listen.js` — `LISTEN.create({...})` (device pick, worklet, test tone, switch device) and `LISTEN.debounce({...})` (two agreeing readings, 250 ms hold), lifted from `notes.html`; **`notes.html` still runs its own inline copy** — migrating it is a follow-on, do it once the practice page has proved the shared module with real input |
+| Fretboard | `fretboard.js` grew `opts.ghost` — faint dashed notes for the scale elsewhere on the neck |
+| Tests (32) | `node SongManager\test_practice.js` — CAGED windows for C and G major, anchors per scale family, relative keys sharing positions, gap-free positions, the 10×5 plan tiling the sequence, rep boundaries, clamps |
+| Routes | `server.py`: `GET /practice`, `/practice.js`, `/listen.js` |
+
+**Not yet run with a guitar.** Checked with headless screenshots (`/practice?key=7&scale=major&at=40&theme=dark`
+previews a mid-session state). Follow-ons: 3-notes-per-string layouts, arpeggio practice on the
+same page, a session log (ties into #5).
 
 **Icon (12 Sep).** `SongManager/icon.svg` is the source: a plectrum with three list lines, original
 artwork, blue gradient. It is the tab favicon on all three pages (`/favicon.svg`, with

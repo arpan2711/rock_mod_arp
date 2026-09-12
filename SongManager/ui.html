@@ -68,6 +68,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 .iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;
   padding:5px 9px;font-family:var(--mono);font-size:11px;cursor:pointer;line-height:1.4}
 .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+/* tab strip, shared by all pages */
+.tabs{display:flex;align-items:stretch;gap:2px;padding:0 22px;background:var(--surface);border-bottom:1px solid var(--rule)}
+.tabs img{width:16px;height:16px;align-self:center;margin-right:10px}
+.tabs a{padding:9px 14px 8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs a:hover{color:var(--ink)}
+.tabs a.cur{color:var(--accent);border-bottom-color:var(--accent)}
+.mast{border-bottom:0;padding-bottom:12px}
 a.iconbtn{text-decoration:none;display:inline-block}
 .iconbtn.quit:hover{border-color:var(--stop,#c0392b);color:var(--stop,#c0392b)}
 
@@ -178,13 +186,12 @@ select,.setname{padding:7px 9px;border:1px solid var(--rule);border-radius:3px;b
     <div class="stat off"><span class="n" id="s-off">–</span><span class="l">disabled</span></div>
     <div class="stat pending"><span class="n" id="s-pending">0</span><span class="l">pending</span></div>
     <div class="stat"><span class="n" id="s-size">–</span><span class="l">gb on disk</span></div>
-    <a class="iconbtn" href="/notes" title="Listen to the guitar and show the note being played">guitar notes</a>
-    <a class="iconbtn" href="/settings" title="RSMods keys, switches and tunables">mod settings</a>
     <button class="iconbtn" id="theme" title="Switch theme">theme</button>
     <button class="iconbtn" id="rescan" title="Re-read every psarc from disk">rescan</button>
     <button class="iconbtn quit" id="quit" title="Stop the Song Manager server">quit manager</button>
   </div>
 </div>
+<nav class="tabs"><img src="/favicon.svg" alt=""><a href="/" class="cur">song manager</a><a href="/notes">guitar notes</a><a href="/practice">practice</a><a href="/settings">mod settings</a></nav>
 
 <div class="tools">
   <div class="search">

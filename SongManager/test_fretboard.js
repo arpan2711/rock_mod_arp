@@ -60,6 +60,12 @@ const count = (s, re) => (s.match(re) || []).length;
   const st = FB.states([{ s: 0, f: 5, m: 45 }, { s: 0, f: 8, m: 48 }, { s: 0, f: 5, m: 45 }], 1);
   check('states(): repeated position keeps one entry', st.length === 2 && st.find(x => x.f === 5).state === 'todo' && st.find(x => x.f === 8).state === 'now');
 }
+{
+  const seq = [{ s: 0, f: 5, m: 45 }, { s: 0, f: 7, m: 47 }];
+  const ghost = [{ s: 0, f: 5, m: 45 }, { s: 1, f: 2, m: 47 }, { s: 5, f: 5, m: 69 }];
+  const s = FB.svg(seq, { ghost, root: 9 });
+  check('ghost notes draw faint, skipping positions the sequence already uses', count(s, /fb-n ghost/g) === 2 && /fb-n ghost root" data-pos="e5"/.test(s) && count(s, /class="fb-n /g) === 4, count(s, /fb-n ghost/g));
+}
 check('every catalogue exercise renders with one circle per position', EX.CATALOGUE.every(e =>
   count(FB.svg(e.seq), /class="fb-n /g) === new Set(e.seq.map(n => n.s + ':' + n.f)).size));
 check('svg is well formed enough: tags balance', EX.CATALOGUE.every(e => { const s = FB.svg(e.seq); return count(s, /<g /g) === count(s, /<\/g>/g) && count(s, /<svg/g) === 1 && count(s, /<\/svg>/g) === 1; }));

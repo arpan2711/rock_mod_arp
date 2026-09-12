@@ -55,6 +55,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 .iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;padding:5px 9px;font-family:var(--mono);
   font-size:11px;cursor:pointer;line-height:1.4;text-decoration:none;display:inline-block}
 .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+/* tab strip, shared by all pages */
+.tabs{display:flex;align-items:stretch;gap:2px;padding:0 22px;background:var(--surface);border-bottom:1px solid var(--rule)}
+.tabs img{width:16px;height:16px;align-self:center;margin-right:10px}
+.tabs a{padding:9px 14px 8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs a:hover{color:var(--ink)}
+.tabs a.cur{color:var(--accent);border-bottom-color:var(--accent)}
+.mast{border-bottom:0;padding-bottom:12px}
 .iconbtn.quit:hover{border-color:var(--stop,#c0392b);color:var(--stop,#c0392b)}
 .empty{padding:60px 22px;text-align:center;color:var(--ink-3);font-size:14px}
 
@@ -146,6 +154,8 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
 .fb-n.now circle{fill:var(--on);stroke:var(--on);stroke-width:2.5} .fb-n.now text{fill:#fff}
 .fb-n.now .fb-pulse{fill:none;stroke:var(--on);stroke-width:2;animation:fbpulse 1s ease-out infinite}
 @keyframes fbpulse{from{r:14.5;opacity:.9}to{r:28;opacity:0}}
+.fb-n.ghost circle{fill:none;stroke:var(--ink-3);stroke-width:1.2;stroke-dasharray:3 2;opacity:.55}
+.fb-n.ghost text{fill:var(--ink-3);font-weight:500;opacity:.8}
 .fb-legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
 .fb-legend span{display:flex;align-items:center;gap:6px}
 .fb-legend i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--accent);background:var(--surface);display:inline-block}
@@ -162,12 +172,11 @@ input[type=range]{width:150px;accent-color:var(--accent-line)}
     <div class="sub" id="sub">listens to the pedal; you hear the pedal directly, so nothing is added to the sound</div>
   </div>
   <div class="right">
-    <a class="iconbtn" href="/">song manager</a>
-    <a class="iconbtn" href="/settings">mod settings</a>
     <button class="iconbtn" id="theme" title="Switch theme">theme</button>
     <button class="iconbtn quit" id="quit" title="Stop the Song Manager server">quit manager</button>
   </div>
 </div>
+<nav class="tabs"><img src="/favicon.svg" alt=""><a href="/">song manager</a><a href="/notes" class="cur">guitar notes</a><a href="/practice">practice</a><a href="/settings">mod settings</a></nav>
 
 <div class="tools">
   <label>input<select id="device"><option value="">— allow the microphone first —</option></select></label>

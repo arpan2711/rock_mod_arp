@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Practice</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f4f6f9; --surface:#fff; --surface-2:#eef2f7;
+  --ink:#131a22; --ink-2:#4a5663; --ink-3:#7b8794;
+  --rule:#dbe2ea; --rule-soft:#e8edf3;
+  --accent:#0b6fa8; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.10);
+  --on:#2f7d32; --on-bg:rgba(63,204,12,.14);
+  --warn:#8a5a00; --warn-bg:rgba(226,193,2,.18);
+  --stop:#a52a33; --stop-bg:rgba(255,79,90,.12);
+  --shadow:0 1px 2px rgba(19,26,34,.05),0 10px 30px -22px rgba(19,26,34,.5);
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1319; --surface:#151c24; --surface-2:#1b232d;
+  --ink:#e8edf3; --ink-2:#a5b2bf; --ink-3:#74828f;
+  --rule:#26313f; --rule-soft:#1e2732;
+  --accent:#56c2fb; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.14);
+  --on:#7fd36a; --on-bg:rgba(63,204,12,.16);
+  --warn:#e0bc4a; --warn-bg:rgba(226,193,2,.14);
+  --stop:#ff8189; --stop-bg:rgba(255,79,90,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -22px rgba(0,0,0,.9);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --surface:#151c24; --surface-2:#1b232d;
+  --ink:#e8edf3; --ink-2:#a5b2bf; --ink-3:#74828f;
+  --rule:#26313f; --rule-soft:#1e2732;
+  --accent:#56c2fb; --accent-line:#1dacf9; --accent-soft:rgba(29,172,249,.14);
+  --on:#7fd36a; --on-bg:rgba(63,204,12,.16);
+  --warn:#e0bc4a; --warn-bg:rgba(226,193,2,.14);
+  --stop:#ff8189; --stop-bg:rgba(255,79,90,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -22px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+
+.mast{padding:18px 22px 12px;background:var(--surface);display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap}
+.mast h1{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:-.02em;margin:0;line-height:1}
+.mast .sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:5px}
+.mast .right{display:flex;gap:8px;margin-left:auto;align-items:center}
+.iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;padding:5px 9px;font-family:var(--mono);
+  font-size:11px;cursor:pointer;line-height:1.4;text-decoration:none;display:inline-block}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+.iconbtn.quit:hover{border-color:var(--stop,#c0392b);color:var(--stop,#c0392b)}
+.empty{padding:60px 22px;text-align:center;color:var(--ink-3);font-size:14px}
+/* tab strip, shared by all pages */
+.tabs{display:flex;align-items:stretch;gap:2px;padding:0 22px;background:var(--surface);border-bottom:1px solid var(--rule)}
+.tabs img{width:16px;height:16px;align-self:center;margin-right:10px}
+.tabs a{padding:9px 14px 8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs a:hover{color:var(--ink)}
+.tabs a.cur{color:var(--accent);border-bottom-color:var(--accent)}
+
+.tools{padding:12px 22px;border-bottom:1px solid var(--rule);background:var(--surface-2);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.tools label,.cfg label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);display:flex;flex-direction:column;gap:3px}
+select,input[type=number]{padding:7px 9px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);color:var(--ink);font-family:var(--body);font-size:13px}
+input[type=number]{width:84px;font-family:var(--mono)}
+input[type=range]{width:150px;accent-color:var(--accent-line)}
+.btn{border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:3px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--body)}
+.btn:hover:not(:disabled){border-color:var(--accent-line)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.stop{border-color:var(--stop);color:var(--stop)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.spacer{margin-left:auto}
+.banner{padding:9px 22px;font-size:13px;display:none;align-items:center;gap:10px;border-bottom:1px solid var(--rule)}
+.banner.show{display:flex}
+.banner.warn{background:var(--warn-bg);color:var(--warn)} .banner.stop{background:var(--stop-bg);color:var(--stop)} .banner.ok{background:var(--on-bg);color:var(--on)}
+
+/* live readout strip: what the detector hears right now */
+.live{display:flex;align-items:center;gap:18px;padding:8px 22px;border-bottom:1px solid var(--rule);background:var(--surface);font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.live .n{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.02em;color:var(--ink-3);min-width:64px;line-height:1}
+.live .n.live{color:var(--ink)} .live .n.tuned{color:var(--on)}
+.live .cents{min-width:110px}
+.live .bar{flex:0 0 220px;height:5px;background:var(--rule);border-radius:3px;overflow:hidden}
+.live .bar i{display:block;height:100%;width:0;background:var(--on);transition:width .05s linear}
+.live .bar i.hot{background:var(--stop)}
+
+.cfg{padding:14px 22px 10px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;background:var(--surface);border-bottom:1px solid var(--rule)}
+.cfg .opts{font-family:var(--body);font-size:13px;color:var(--ink-2);text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:6px;padding:7px 0}
+.cfg .opts input[type=number]{width:70px;padding:4px 6px}
+#metro.on{border-color:var(--on);color:var(--on)} #metro.beat{background:var(--on-bg)}
+.pos{padding:10px 22px;display:flex;gap:8px 18px;align-items:center;flex-wrap:wrap;background:var(--surface);border-bottom:1px solid var(--rule);font-size:13px;color:var(--ink-2)}
+.pos .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
+.pos label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.pos label.all{font-weight:600;color:var(--ink)}
+
+.stage{padding:16px 22px 22px;display:flex;flex-direction:column;gap:10px;flex:1}
+.target{font-family:var(--display);font-size:20px;font-weight:600;min-height:40px;display:flex;align-items:baseline;gap:12px;color:var(--ink-3);flex-wrap:wrap}
+.target b{font-size:34px;color:var(--accent);transition:color .1s}
+.target .pos-l{font-family:var(--mono);font-size:13px;color:var(--ink-3);font-weight:400}
+.target.bad b{color:var(--stop)} .target.good b{color:var(--on)}
+.board{max-width:1100px}
+.progress{max-width:1100px;display:flex;flex-direction:column;gap:6px}
+.progress .track{height:6px;background:var(--rule);border-radius:3px;overflow:hidden}
+.progress .track i{display:block;height:100%;width:0;background:var(--accent-line);transition:width .15s}
+.progress .txt{font-family:var(--mono);font-size:12px;color:var(--ink-2)} .progress .txt b{color:var(--ink);font-weight:500}
+.strip{display:flex;gap:4px;overflow-x:auto;padding:4px 0 6px;scroll-behavior:smooth;max-width:1100px}
+.strip .c{flex:none;font-family:var(--mono);font-size:11px;padding:4px 7px;border:1px solid var(--rule);border-radius:3px;background:var(--surface-2);
+  color:var(--ink-3);display:flex;flex-direction:column;align-items:center;line-height:1.3;min-width:46px}
+.strip .c b{font-family:var(--display);font-size:13px;font-weight:600;color:var(--ink-2)}
+.strip .c.done{opacity:.5} .strip .c.done b{color:var(--on)}
+.strip .c.now{border-color:var(--accent-line);background:var(--accent-soft)} .strip .c.now b{color:var(--accent)}
+.foot{padding:10px 22px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-3);display:flex;gap:22px;flex-wrap:wrap}
+
+/* fretboard (same classes as the notes page) */
+.fb{width:100%;height:auto;display:block;font-family:var(--display)}
+.fb-board{fill:var(--surface-2);stroke:var(--rule)}
+.fb-inlay{fill:var(--rule)}
+.fb-fret{stroke:var(--rule);stroke-width:2}
+.fb-nut{stroke:var(--ink-3);stroke-width:6}
+.fb-string{stroke:var(--ink-3);opacity:.75}
+.fb-sname{fill:var(--ink-2);font:500 12px var(--mono)}
+.fb-num{fill:var(--ink-3);font:400 11px var(--mono);text-anchor:middle}
+.fb-n circle{fill:var(--surface);stroke:var(--accent);stroke-width:1.8}
+.fb-n text{fill:var(--ink);font:700 14px var(--display);text-anchor:middle}
+.fb-n.root circle{fill:var(--accent)} .fb-n.root text{fill:var(--surface)}
+.fb-n.done{opacity:.28}
+.fb-n.now circle{fill:var(--on);stroke:var(--on);stroke-width:2.5} .fb-n.now text{fill:#fff}
+.fb-n.now .fb-pulse{fill:none;stroke:var(--on);stroke-width:2;animation:fbpulse 1s ease-out infinite}
+@keyframes fbpulse{from{r:14.5;opacity:.9}to{r:28;opacity:0}}
+.fb-n.ghost circle{fill:none;stroke:var(--ink-3);stroke-width:1.2;stroke-dasharray:3 2;opacity:.55}
+.fb-n.ghost text{fill:var(--ink-3);font-weight:500;opacity:.8}
+.fb-n.ghost.root circle{stroke:var(--accent);opacity:.7}
+.fb-legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.fb-legend span{display:flex;align-items:center;gap:6px}
+.fb-legend i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--accent);background:var(--surface);display:inline-block}
+.fb-legend i.root{background:var(--accent)}
+.fb-legend i.now{background:var(--on);border-color:var(--on)}
+.fb-legend i.done{opacity:.28}
+.fb-legend i.ghost{border:1.2px dashed var(--ink-3);background:none;opacity:.7}
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <div>
+    <h1>Practice</h1>
+    <div class="sub" id="sub">a scale in every position across the neck, as many times as you set</div>
+  </div>
+  <div class="right">
+    <button class="iconbtn" id="theme" title="Switch theme">theme</button>
+    <button class="iconbtn quit" id="quit" title="Stop the Song Manager server">quit manager</button>
+  </div>
+</div>
+<nav class="tabs"><img src="/favicon.svg" alt=""><a href="/">song manager</a><a href="/notes">guitar notes</a><a href="/practice" class="cur">practice</a><a href="/settings">mod settings</a></nav>
+
+<div class="tools">
+  <label>input<select id="device"><option value="">— allow the microphone first —</option></select></label>
+  <label>A4 reference<input type="number" id="a4" value="440" min="415" max="466" step="1"></label>
+  <label>noise gate<input type="range" id="gate" min="-70" max="-20" value="-48" step="1"><span id="gate-v" style="font-size:10px">-48 dBFS</span></label>
+  <label>test tone <span style="font-size:10px;text-transform:none;letter-spacing:0">(no guitar needed)</span>
+    <span style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="test"><input type="range" id="test-f" min="40" max="88" value="40" step="1"><span id="test-v" style="font-size:10px;font-family:var(--mono)">E2</span></span></label>
+  <span class="spacer"></span>
+  <button class="btn primary" id="start">Start listening</button>
+  <button class="btn stop" id="stop" disabled>Stop</button>
+</div>
+
+<div class="banner" id="banner"><span id="banner-text"></span></div>
+
+<div class="live">
+  <span class="n" id="note">—</span>
+  <span class="cents" id="hz">press Start listening</span>
+  <span>level</span><div class="bar"><i id="level"></i></div><span id="level-v">−∞ dB</span>
+</div>
+
+<div class="cfg">
+  <label>scale<select id="scale"></select></label>
+  <label>key<select id="key"></select></label>
+  <label>times through<input type="number" id="reps" min="1" max="200" value="10"></label>
+  <label>&nbsp;<span class="opts"><input type="checkbox" id="anyoct"> any octave counts</span></label>
+  <label>&nbsp;<span class="opts"><button class="btn" id="metro" title="Click through the PC speakers; runs with or without a session">metronome</button><input type="number" id="bpm" min="30" max="240" value="80"> bpm</span></label>
+  <span class="spacer"></span>
+  <button class="btn primary" id="begin">Begin</button>
+  <button class="btn" id="end" disabled>Stop</button>
+</div>
+<div class="pos" id="positions"></div>
+
+<div class="stage">
+  <div class="target" id="target">pick a scale and key, press Start listening, then Begin</div>
+  <div class="board" id="board"></div>
+  <div class="fb-legend"><span><i class="root"></i>root</span><span><i></i>this position</span><span><i class="now"></i>play next</span><span><i class="done"></i>played</span><span><i class="ghost"></i>the scale elsewhere on the neck</span></div>
+  <div class="progress"><div class="track"><i id="bar"></i></div><div class="txt" id="stats"></div></div>
+  <div class="strip" id="strip"></div>
+</div>
+
+<div class="foot">
+  <span id="f-ctx">audio: idle</span>
+  <span id="f-game"></span>
+  <span>the detector hears pitch, not position — the string·fret shown is the suggested fingering; the same pitch elsewhere still counts</span>
+</div>
+
+<script src="/notes-dsp.js"></script>
+<script src="/exercises.js"></script>
+<script src="/fretboard.js"></script>
+<script src="/practice.js"></script>
+<script src="/listen.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const EX = window.GUITAR_EX, FB = window.FRETBOARD, PR = window.PRACTICE;
+const QS = new URLSearchParams(location.search);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pcName = m => PR.KEYS[((m % 12) + 12) % 12].name;
+const octave = m => Math.floor(m / 12) - 1;
+
+/* theme, shared with the other pages */
+const savedTheme = QS.get('theme') || localStorage.getItem('rsm-theme');
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+$('theme').onclick = () => {
+  const now = document.documentElement.dataset.theme;
+  const next = now === 'dark' ? 'light' : now === 'light' ? '' : 'dark';
+  if (next) { document.documentElement.dataset.theme = next; localStorage.setItem('rsm-theme', next); }
+  else { delete document.documentElement.dataset.theme; localStorage.removeItem('rsm-theme'); }
+};
+
+/* ---------------- banner + heartbeat ---------------- */
+let bannerTimer;
+function flash(kind, text, ms = 7000) {
+  const el = $('banner'); el.className = 'banner show ' + kind; $('banner-text').textContent = text;
+  clearTimeout(bannerTimer); bannerTimer = setTimeout(() => { el.className = 'banner'; }, ms);
+}
+async function beat() {
+  try {
+    const r = await fetch('/api/status').then(r => r.json());
+    $('f-game').textContent = r.gameRunning ? 'Rocksmith is running — it holds the NUX exclusively, so this page may not get the input' : '';
+  } catch (_) {}
+}
+setInterval(beat, 20000); beat();
+
+/* ---------------- listener ---------------- */
+const gateLinear = () => Math.pow(10, Number($('gate').value) / 20);
+const L = LISTEN.create({ device: $('device'), gate: gateLinear, test: $('test'), testMidi: () => Number($('test-f').value), flash,
+  onReading: r => D.feed(r) });
+const D = LISTEN.debounce({ a4: () => Number($('a4').value) || 440,
+  onLevel(db) {
+    $('level').style.width = Math.max(0, Math.min(100, (db + 60) / 60 * 100)) + '%';
+    $('level').className = db > -6 ? 'hot' : '';
+    $('level-v').textContent = (db <= -100 ? '−∞' : db.toFixed(0)) + ' dB';
+  },
+  onNote(m, cents, hz, changed) {
+    $('note').textContent = pcName(m) + octave(m);
+    $('note').className = 'n ' + (Math.abs(cents) <= 5 ? 'tuned' : 'live');
+    $('hz').textContent = `${hz.toFixed(1)} Hz · ${cents >= 0 ? '+' : '−'}${Math.abs(cents).toFixed(0)} cents`;
+    if (changed) feed(m);
+  },
+  onClear() { $('note').textContent = '—'; $('note').className = 'n'; $('hz').textContent = 'listening…'; },
+});
+$('gate').oninput = () => { $('gate-v').textContent = $('gate').value + ' dBFS'; L.setGate(gateLinear()); };
+$('test-f').oninput = () => { const m = Number($('test-f').value); $('test-v').textContent = pcName(m) + octave(m); L.setTestMidi(m); };
+$('test').onchange = () => L.testTone();
+$('start').onclick = async () => {
+  $('start').disabled = true;
+  const info = await L.start();
+  if (!info) { $('start').disabled = false; return; }
+  $('stop').disabled = false;
+  $('sub').textContent = info.label + ' · listen-only, you hear the pedal directly';
+  $('f-ctx').textContent = `audio: ${info.sampleRate} Hz · analysis every ${(512 / info.sampleRate * 1000).toFixed(1)} ms · input latency ~${(info.baseLatency * 1000).toFixed(0)} ms (display only)`;
+  $('hz').textContent = 'listening…';
+  flash('ok', 'Listening. Nothing is played back — you should be hearing the pedal directly.', 4000);
+};
+$('stop').onclick = stopListening;
+async function stopListening() {
+  await L.stop(); D.reset();
+  $('start').disabled = false; $('stop').disabled = true;
+  $('f-ctx').textContent = 'audio: idle'; $('level').style.width = '0';
+  $('note').textContent = '—'; $('note').className = 'n'; $('hz').textContent = 'press Start listening';
+}
+$('device').onchange = async () => { const label = await L.switchDevice($('device').value); if (label) $('sub').textContent = label + ' · listen-only, you hear the pedal directly'; };
+if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) navigator.mediaDevices.enumerateDevices().then(() => {}).catch(() => {});
+
+/* ---------------- configuration ---------------- */
+const SAVE = 'rsm-practice';
+let plan = null, run = null, statsTimer = null, targetFlash = null, ghost = [];
+function fillSelects() {
+  $('scale').innerHTML = PR.SCALES.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  $('key').innerHTML = PR.KEYS.map(k => `<option value="${k.pc}">${k.name}</option>`).join('');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(SAVE) || '{}'); } catch (_) {}
+  $('scale').value = QS.get('scale') || saved.scale || 'major';
+  $('key').value = QS.get('key') || saved.key || '7';
+  $('reps').value = QS.get('reps') || saved.reps || 10;
+  if (saved.bpm) $('bpm').value = saved.bpm;
+  refreshPositions(saved.positions);
+}
+function cfg() { return { scale: $('scale').value, key: Number($('key').value), reps: Math.max(1, Math.min(200, Number($('reps').value) || 10)) }; }
+function refreshPositions(keep) {
+  const c = cfg(), pos = PR.positions(c.key, EX.FORMULAS[c.scale]);
+  const on = i => !keep || keep === 'all' || keep.includes(i);
+  $('positions').innerHTML = `<span class="l">positions</span><label class="all"><input type="checkbox" id="pos-all"> all positions</label>` +
+    pos.map(p => `<label><input type="checkbox" class="p" value="${p.index}" ${on(p.index) ? 'checked' : ''}> ${p.index + 1} <span style="color:var(--ink-3)">· ${p.label}</span></label>`).join('');
+  $('pos-all').onchange = () => { document.querySelectorAll('.p').forEach(x => { x.checked = $('pos-all').checked; }); rebuild(); };
+  document.querySelectorAll('.p').forEach(x => { x.onchange = rebuild; });
+  rebuild();
+}
+function chosen() { return [...document.querySelectorAll('.p:checked')].map(x => Number(x.value)); }
+function rebuild() {
+  const c = cfg(), all = document.querySelectorAll('.p').length, picked = chosen();
+  $('pos-all').checked = picked.length === all;
+  $('pos-all').indeterminate = picked.length > 0 && picked.length < all;
+  localStorage.setItem(SAVE, JSON.stringify({ scale: c.scale, key: c.key, reps: c.reps, bpm: Number($('bpm').value) || 80, positions: picked.length === all ? 'all' : picked }));
+  if (run) return;                                   // settings apply to the next session
+  if (!picked.length) { plan = null; $('board').innerHTML = ''; $('target').textContent = 'tick at least one position'; $('stats').textContent = ''; $('strip').innerHTML = ''; return; }
+  plan = PR.plan({ ...c, positions: picked });
+  ghost = PR.neck(plan.rootPc, plan.formula);
+  const union = []; const seen = new Set();
+  for (const pi of plan.chosen) for (const n of plan.positions[pi].notes) { const k = n.s + ':' + n.f; if (!seen.has(k)) { seen.add(k); union.push(n); } }
+  $('board').innerHTML = FB.svg(union, { index: -1, root: plan.rootPc, ghost });
+  const per = plan.segments.filter(s => s.rep === 1).reduce((a, s) => a + (s.end - s.start), 0);
+  $('target').className = 'target';
+  $('target').innerHTML = `${pcName(plan.rootPc)} ${esc(PR.SCALES.find(s => s.id === plan.scale).name)} <span class="pos-l">${plan.chosen.length} of ${plan.positions.length} positions · ${per} notes per time through · ${plan.reps}× = ${plan.seq.length} notes</span>`;
+  $('stats').innerHTML = L.active() ? 'press Begin' : 'press Start listening, then Begin';
+  $('bar').style.width = '0'; $('strip').innerHTML = '';
+}
+$('scale').onchange = $('key').onchange = () => refreshPositions('all');
+$('reps').onchange = rebuild;
+
+/* ---------------- running a session ---------------- */
+function begin() {
+  if (!plan) { flash('warn', 'Tick at least one position.'); return; }
+  if (!L.active()) { flash('warn', 'Press Start listening first, then Begin.'); return; }
+  rebuild();                                          // pick up any edits
+  run = EX.createRun({ seq: plan.seq }, { anyOctave: $('anyoct').checked });
+  render(); updateStats();
+  clearInterval(statsTimer); statsTimer = setInterval(updateStats, 500);
+  $('begin').textContent = 'Restart'; $('end').disabled = false;
+  document.querySelectorAll('#scale,#key,#reps,.p,#pos-all').forEach(x => { x.disabled = true; });
+}
+function end(msg) {
+  run = null; clearInterval(statsTimer); statsTimer = null;
+  $('begin').textContent = 'Begin'; $('end').disabled = true;
+  document.querySelectorAll('#scale,#key,#reps,.p,#pos-all').forEach(x => { x.disabled = false; });
+  rebuild();
+  if (msg) $('stats').textContent = msg;
+}
+function feed(midi) {
+  if (!run || run.done) return;
+  const r = run.feed(midi, performance.now());
+  if (r.event === 'ignore') return;
+  render(r.event === 'wrong' ? 'bad' : 'good');
+  updateStats();
+  if (r.event === 'done') {
+    clearInterval(statsTimer);
+    const st = run.stats(performance.now());
+    flash('ok', `Done: ${plan.reps}× through in ${(st.seconds / 60).toFixed(1)} min, ${st.notesPerMin.toFixed(0)} notes/min, ${st.wrong} wrong (${(st.accuracy * 100).toFixed(0)}% accuracy). Press Restart to go again.`, 15000);
+    $('end').disabled = true;
+    $('target').className = 'target good'; $('target').innerHTML = '<b>done</b>';
+  }
+}
+function render(kind) {
+  const i = run.index, seg = PR.where(plan, i), segSeq = plan.seq.slice(seg.start, seg.end);
+  const local = run.done ? segSeq.length : i - seg.start;
+  $('board').innerHTML = FB.svg(segSeq, { index: local, root: plan.rootPc, ghost });
+  $('strip').innerHTML = segSeq.map((n, k) => `<span class="c ${k < local ? 'done' : k === local ? 'now' : ''}"><b>${pcName(n.m)}${octave(n.m)}</b>${EX.label(n)}</span>`).join('');
+  const now = $('strip').querySelector('.c.now'); if (now) now.scrollIntoView({ inline: 'center', block: 'nearest' });
+  $('bar').style.width = (i / plan.seq.length * 100).toFixed(1) + '%';
+  if (run.done) return;
+  const t = run.target, p = plan.positions[seg.pos];
+  $('target').innerHTML = `next <b>${pcName(t.m)}${octave(t.m)}</b> <span class="pos-l">${EX.label(t)} · time ${seg.rep} of ${plan.reps} · position ${seg.pos + 1} of ${plan.positions.length} (${p.label}) · note ${local + 1} of ${segSeq.length}</span>`;
+  $('target').className = 'target' + (kind ? ' ' + kind : '');
+  clearTimeout(targetFlash);
+  if (kind) targetFlash = setTimeout(() => { $('target').className = 'target'; }, 250);
+}
+function updateStats() {
+  if (!run) return;
+  const st = run.stats(performance.now());
+  const mm = Math.floor(st.seconds / 60), ss = String(Math.floor(st.seconds % 60)).padStart(2, '0');
+  $('stats').innerHTML = `<b>${st.index}</b> / ${st.total} notes · <b>${st.wrong}</b> wrong · ${mm}:${ss} · <b>${st.notesPerMin.toFixed(0)}</b> notes/min · ${(st.accuracy * 100).toFixed(0)}% accuracy`;
+}
+$('begin').onclick = begin;
+$('end').onclick = () => end('stopped');
+
+/* ---------------- metronome (own audio context, independent of the listener) ---------------- */
+let metroCtx = null, metro = null;
+const bpm = () => Math.min(240, Math.max(30, Number($('bpm').value) || 80));
+function metroStart(rate) {
+  metroStop();
+  if (!metroCtx) metroCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (metroCtx.state === 'suspended') metroCtx.resume();
+  const c = metroCtx, btn = $('metro');
+  let next = c.currentTime + 0.05, beatN = 0;
+  metro = setInterval(() => {
+    while (next < c.currentTime + 0.15) {
+      const accent = beatN % 4 === 0, o = c.createOscillator(), g = c.createGain();
+      o.frequency.value = accent ? 1500 : 1000;
+      g.gain.setValueAtTime(accent ? 0.35 : 0.22, next); g.gain.exponentialRampToValueAtTime(0.001, next + 0.04);
+      o.connect(g).connect(c.destination); o.start(next); o.stop(next + 0.05);
+      setTimeout(() => { btn.classList.add('beat'); setTimeout(() => btn.classList.remove('beat'), 90); }, Math.max(0, (next - c.currentTime) * 1000));
+      next += 60 / rate; beatN++;
+    }
+  }, 50);
+  btn.classList.add('on'); btn.textContent = 'metronome on';
+}
+function metroStop() {
+  if (metro) clearInterval(metro);
+  metro = null;
+  const btn = $('metro'); btn.classList.remove('on'); btn.textContent = 'metronome';
+}
+$('metro').onclick = () => { if (metro) metroStop(); else metroStart(bpm()); };
+$('bpm').onchange = () => { rebuild(); if (metro) metroStart(bpm()); };
+
+$('quit').onclick = async () => {
+  metroStop();
+  try { await L.stop(); } catch (e) {}
+  await fetch('/api/quit', {method: 'POST'}).catch(() => {});
+  document.body.innerHTML = '<div class="empty">Manager stopped. You can close this tab.</div>';
+};
+
+fillSelects();
+// preview a mid-session state without a guitar: /practice?key=7&scale=major&at=40
+if (QS.has('at') && plan) { run = EX.createRun({ seq: plan.seq }); for (let k = 0; k < Number(QS.get('at')); k++) run.feed(plan.seq[k].m, k); render(); updateStats(); run = null; }
+</script>
+</body>
+</html>

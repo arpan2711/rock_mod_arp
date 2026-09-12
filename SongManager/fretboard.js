@@ -6,6 +6,8 @@
 //   * open-string notes sit just left of the nut
 //   * every note in the exercise is a labelled circle; the root is filled,
 //     the note to play next is green and pulses, notes already played fade
+//   * opts.ghost: extra positions drawn faint and dashed (the scale elsewhere on
+//     the neck); a ghost at a position the sequence uses is skipped
 //
 // Loaded in the browser (plain script -> window.FRETBOARD) and in node for the
 // tests (module.exports). Colours come from CSS classes so the page theme applies.
@@ -53,6 +55,12 @@ const FRETBOARD = (() => {
       o.push(`<text class="fb-sname" x="16" y="${sy(s)}" dy=".35em" text-anchor="middle">${SNAME[s]}</text>`);
     }
     for (let f = 1; f <= FRETS; f++) o.push(`<text class="fb-num" x="${fx(f)}" y="${BOT + 34}">${f}</text>`);
+    const used = new Set(seq.map(n => n.s + ':' + n.f));
+    for (const n of (opts.ghost || [])) {
+      if (used.has(n.s + ':' + n.f)) continue;
+      const cls = 'fb-n ghost' + (root !== null && n.m % 12 === root ? ' root' : '');
+      o.push(`<g class="${cls}" data-pos="${SNAME[n.s]}${n.f}"><circle cx="${fx(n.f)}" cy="${sy(n.s)}" r="${R}"/><text x="${fx(n.f)}" y="${sy(n.s)}" dy=".36em" text-anchor="middle">${noteName(n.m)}</text></g>`);
+    }
     for (const n of states(seq, index)) {
       const cls = 'fb-n ' + n.state + (root !== null && n.m % 12 === root ? ' root' : '');
       const x = fx(n.f), y = sy(n.s);

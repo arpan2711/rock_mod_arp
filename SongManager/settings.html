@@ -59,6 +59,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 .iconbtn{background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:3px;
   padding:5px 9px;font-family:var(--mono);font-size:11px;cursor:pointer;line-height:1.4;text-decoration:none;display:inline-block}
 .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+/* tab strip, shared by all pages */
+.tabs{display:flex;align-items:stretch;gap:2px;padding:0 22px;background:var(--surface);border-bottom:1px solid var(--rule)}
+.tabs img{width:16px;height:16px;align-self:center;margin-right:10px}
+.tabs a{padding:9px 14px 8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs a:hover{color:var(--ink)}
+.tabs a.cur{color:var(--accent);border-bottom-color:var(--accent)}
+.mast{border-bottom:0;padding-bottom:12px}
 .iconbtn.quit:hover{border-color:var(--stop,#c0392b);color:var(--stop,#c0392b)}
 .empty{padding:60px 22px;text-align:center;color:var(--ink-3);font-size:14px}
 
@@ -158,13 +166,12 @@ details .body{padding-top:0}
     <div class="sub" id="path">RSMods.ini</div>
   </div>
   <div class="right">
-    <a class="iconbtn" href="/">song manager</a>
-    <a class="iconbtn" href="/notes">guitar notes</a>
     <button class="iconbtn" id="theme" title="Switch theme">theme</button>
     <button class="iconbtn" id="reload" title="Re-read the ini and status from disk">reload</button>
     <button class="iconbtn quit" id="quit" title="Stop the Song Manager server">quit manager</button>
   </div>
 </div>
+<nav class="tabs"><img src="/favicon.svg" alt=""><a href="/">song manager</a><a href="/notes">guitar notes</a><a href="/practice">practice</a><a href="/settings" class="cur">mod settings</a></nav>
 
 <div class="banner" id="banner"><span id="banner-text"></span></div>
 
