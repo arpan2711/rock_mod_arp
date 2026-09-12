@@ -14,7 +14,7 @@ truth for everything hand-made; the game folder is where it gets deployed.
 
 | Thing | State | Since |
 |---|---|---|
-| `Y:\...\xinput1_3.dll` | pause/scrub build, SHA-256 `6b6af655 ab5e3e5e ab62e3f8 81fe9880 5ee5673c d02b5871 5dd8d5f4 48d6379f` | 12 Sep 01:28 |
+| `Y:\...\xinput1_3.dll` | **`1.2.7.4-arp.1`** — pause/scrub build with the version string, SHA-256 `91c1e20c 301c6042 7c414124 36f6a276 15edf1ae 4ec36657 bdbed5a3 b850ad20` | 12 Sep 01:42 |
 | RS_ASIO v0.7.5 | `avrt.dll` + `RS_ASIO.dll` + `RS_ASIO.ini` in the game folder; input `NUX Audio` ch 0, output WASAPI, **64-sample buffer** | 11 Sep |
 | `Rocksmith.ini` | `LatencyBuffer=2` — the floor: 1 crackles on this PC; everything else as before | 12 Sep |
 | `RSMods.ini` | keys re-mapped to one cluster, no Ctrl: `RRSpeedDownKey`, `LoopClearKey` added, `RewindKey = VK_BACK`, `ToggleAmpSourceKey = VK_OEM_7`; plus `PauseSongKey = P`, `ForwardKey = VK_DELETE`, `ForwardBy = 5000`, and `DisplayCurrentAccuracy`, `DisplayNoteStreak`, `DisplayLoopPasses` all `on`; nothing removed | 12 Sep |
@@ -31,7 +31,14 @@ at full refresh rate; the four 9 Sep ports.
 
 **Tested 12 Sep:** pause / scrub (`P`, `Delete`) — all four checks passed, the highway freezes
 with the audio, so the game's clock follows the audio position. Still unexercised: the Score
-Attack overlay line. Next: live scrub while paused (backlog #12), the menu tone (#11).
+Attack overlay line.
+
+**Version string:** `RSMods_debug.txt` now opens with `RSMODS Version: 1.2.7.4-arp.1`. Bump the
+number in `_RSMODS_VERSION` (`dllmain.cpp:17`) on every build that gets installed, so the
+log always says which build is running.
+
+**PICK UP HERE — next session: the Settings page in Song Manager (backlog #13, spec below).**
+Then #12 (live scrub while paused) and #11 (menu tone, decision pending).
 
 ---
 
@@ -87,7 +94,8 @@ Or step back one build at a time by copying a backup over `Y:\...\xinput1_3.dll`
 | `20260912-*` | `95e1650` (`ac288994…`) | + note streak line |
 | `20260912-001815` | `0827a56` (`2c2a5aa4…`) | + `RRSpeedDownKey`, `LoopClearKey` |
 | `20260912-012814` | `659542c` (`6ecd9865…`) | + hit/total, Score Attack line, loop pass counter |
-| *(installed)* | pause/scrub commit (`6b6af655…`) | + `P` pause, `Delete` forward, scrub while paused |
+| `20260912-014223` | `f2fceca` (`6b6af655…`) | + `P` pause, `Delete` forward, scrub while paused |
+| *(installed)* | `1.2.7.4-arp.1` (`91c1e20c…`) | same code + the version string |
 
 `backups/` is untracked — do not delete it. Any build can also be rebuilt from its commit
 with `git checkout <hash> -- RSMods-src && scripts\build-dll.ps1`.
@@ -248,7 +256,8 @@ defect found and fixed (`c0817e0`): the fork hands messages to ImGui at the *end
 clear its key-down state. Known trade-off inherited from upstream: any yes/no dialog
 that appears *before* the main menu gets Escape+Enter spammed.
 
-`RSMods_debug.txt` still reports `1.2.7.4` — the version string is deliberately
+`RSMods_debug.txt` reported plain `1.2.7.4` until 12 Sep; it now says `1.2.7.4-arp.N` (backlog
+#1 done). Before that the version string was deliberately
 unchanged, since this is 1.2.7.4 plus patches, not an upstream release.
 
 ---
@@ -462,7 +471,7 @@ Ranked for a practice tool. Effort is a guess.
 
 | # | Idea | Effort | Hangs off |
 |---|---|---|---|
-| 1 | **Version string bump** so `RSMods_debug.txt` says `1.2.7.4-arp.N` | 1 line | `_RSMODS_VERSION` macro, `dllmain.cpp:16` |
+| 1 | ~~**Version string bump**~~ — **done 12 Sep**, `1.2.7.4-arp.1`; bump N per installed build | — | `_RSMODS_VERSION`, `dllmain.cpp:17` |
 | 2 | **Gate the Crowd Control server** behind `CrowdControlEnabled=off` — 3 threads + a TCP listener for Twitch, started unconditionally | small | `Initialize()` → `CrowdControl::StartServer()`; note it also applies the scroll-speed patch, keep that |
 | 3 | **Auto speed ladder** — pass counter and per-pass accuracy are **done (12 Sep)**; left: after N passes at or above X %, bump speed by `RRSpeedInterval` automatically | small now | `loopPass`, `lastPassAccuracy`, `RiffRepeater::SetSpeed` |
 | 4 | ~~**Port `DisplayCurrentAccuracy`**~~ — **done 11 Sep 2026**, see §Accuracy overlay | — | `ReadCurrentAccuracy()` in `dllmain.cpp` |
@@ -472,10 +481,53 @@ Ranked for a practice tool. Effort is a guess.
 | 8 | **Strict loop** — miss a note inside a loop and it rewinds to the loop start; toggle key so it is opt-in | small-medium | `totalNotesMissed` delta per frame + the existing loop seek at `dllmain.cpp` |
 | 9 | **Switch the MG-300's preset from the game** — the MK2 takes MIDI over USB: CC#60 (or #73) on channel 1, value = preset number selects a preset; program change does *not* work and there is no bypass CC, so "mute the pedal" = switch to a user-made silent preset. Two uses: (a) make `\` also flip the pedal between your playing preset and a silent one, closing the "physical amp still makes noise" gap; (b) per-song pedal preset, the way `AutoTuneForSong` already sends tuning pedals a program change over WinMM MIDI out | medium; USB-MIDI on this pedal is reported as fiddly | `Mods/Midi.cpp` (already has a MIDI-out device picker + send), `ToggleAmpSourceKey` handler |
 | 10 | ~~**`LatencyBuffer=1`**~~ — tried 12 Sep, crackles; 2 is the floor | — | `Rocksmith.ini` |
+| 13 | **Settings page in Song Manager** — replaces `RSMods.exe` as the editor. **Next up; full spec below the table.** | an evening | `SongManager/server.py` (+ `ui.html`), `docs/keymap-wooting-80he.py` |
 | 12 | **Live scrub while paused** — try `SeekOnEvent` on the paused voice so the highway redraws at the new spot while paused, instead of only on resume. Keep the deferred seek as the fallback if the highway does not follow | small | pause handler in `dllmain.cpp` |
 | 11 | **Menu / tuner tone** — the game's out-of-song tone is a hard-wired high-gain preset and Rocksmith has no default-tone setting (Ubisoft confirmed on the Steam forums). Two ways round it, decision pending: **A** clean tone saved to Tone Designer slot 2–4, pressed by hand after every song; **B** (recommended) `MuteGameAmpOutsideSongs=on` — hold `Mixer_Player1` at 0 whenever `currentMenu` is not a song mode, so menus / tuner / lessons are pedal-only and the game amp returns when a song starts, respecting the `'` toggle. ~20 lines on the amp-toggle plumbing | small | `VolumeControl::MutePlayer`, `songModes`, the per-frame block in `Hook_EndScene` |
 
-Suggested order: 11 first (decide A/B, an hour), then 3 → 8 → 5 as the practice arc (7 is done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
+Suggested order: **13 first** (spec below), then 12, then 11 (decide A/B), then 3 → 8 → 5 as the practice arc (7 is done); 9a is the one that finishes the amp toggle properly and is worth a spike to see whether this pedal's USB MIDI behaves; 1, 2, 6 whenever.
+
+### #13 — Settings page in Song Manager (the plan, as agreed 12 Sep)
+
+**Why:** `RSMods.exe` only knows the 1.2.7.4 keys and rewrites `RSMods.ini` from its own list
+when it saves, so every key we added (`ToggleAmpSourceKey`, `PauseSongKey`, `ForwardKey`,
+`LoopClearKey`, `RRSpeedDownKey`, `ForwardBy`, the three `Display*` switches) is dropped. The
+DLL defaults mean nothing *breaks*, but any key you changed silently resets. Its UI is a
+480 KB generated `Designer.cs`, so extending it is not realistic. Song Manager is already a
+local stdlib-Python web app (`server.py` ~360 lines + `ui.html`, started by
+`Song Manager.bat`), so a second page there is the natural home. After this, stop opening
+`RSMods.exe`.
+
+**What the page does:**
+
+1. **Keybinds table** — one row per practice key (`RRSpeedKey`, `RRSpeedDownKey`, `LoopStartKey`,
+   `LoopEndKey`, `LoopClearKey`, `RewindKey`, `ForwardKey`, `PauseSongKey`, `ToggleAmpSourceKey`,
+   plus the stock ones that are bound). Click the field, press a key, it writes the `VK_` name
+   (map from `DLL/Settings.hpp` `keyMap`; JS `event.code` → `VK_` table in the page). Flags
+   two features on the same key.
+2. **Toggles** — `DisplayCurrentAccuracy`, `DisplayNoteStreak`, `DisplayLoopPasses`,
+   `PreventMidSongPause`, `ToggleLoft`, `ShowSongTimer`, `VolumeControl`; later
+   `MuteGameAmpOutsideSongs` (#11 B).
+3. **Tunables** — `RewindBy`, `ForwardBy`, `RRSpeedInterval`, `LoopingLeadUp`, with units.
+4. **Safe writer** — the only careful part. Read `RSMods.ini` as lines; change only the
+   `key = value` lines it owns, in place; preserve every other line, comment, blank and the
+   section order byte-for-byte (CRLF kept). Never rewrite from a template. Write the game copy
+   *and* `config/RSMods.ini` so the repo snapshot cannot drift. Refuse to save if the two
+   differed before the edit (show a diff instead).
+5. **Regenerate the picture** — run `docs/keymap-wooting-80he.py` after a keybind change; its
+   `SHORTCUTS` table should be driven from the ini rather than hand-edited (small refactor:
+   read the ini, map `VK_` → cap label, keep the group/text per feature).
+6. **Reload hint** — `Ctrl+A` in-game reloads the ini; no restart. Say so on the page.
+7. **Status strip** — installed DLL hash vs `Installer/Resources/xinput1_3.dll` hash ("installed
+   / newer build not installed"), the `RSMODS Version:` first line of `RSMods_debug.txt`,
+   `LatencyBuffer` from `Rocksmith.ini`, `CustomBufferSize` from `RS_ASIO.ini`, and the last
+   ~10 lines of `RSMods_debug.txt`. Read-only.
+
+**Not in scope:** installing the DLL (keep `scripts\install-dll.ps1`), colours/Twitch/anything
+`RSMods.exe` does that we do not use, editing `Rocksmith.ini` / `RS_ASIO.ini` (display only).
+
+**Rules:** stdlib only, like the rest of Song Manager; no new launcher — same server, a
+`/settings` route; the writer gets a test that round-trips `config/RSMods.ini` unchanged.
 
 Not worth it: auto-loop by song section (needs phrase-boundary offsets — real reverse
 engineering); metronome (unclear whether Wwise exposes a click).

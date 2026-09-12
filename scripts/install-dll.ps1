@@ -39,4 +39,4 @@ Copy-Item $built $target -Force
 $f = Get-Item $target
 Write-Host "Installed: $($f.FullName)  ($('{0:N0}' -f $f.Length) bytes)"
 Write-Host ""
-Write-Host "Note: RSMods_debug.txt will still report 1.2.7.4 - the version string is unchanged."
+Write-Host "RSMods_debug.txt reports the build as 1.2.7.4-arp.N on the first line."

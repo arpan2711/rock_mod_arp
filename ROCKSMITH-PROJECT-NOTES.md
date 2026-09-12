@@ -261,7 +261,8 @@ Nothing here has been run in the game yet. In order:
 3. Calibration at the monitor's real refresh rate — does the meter fill?
 4. `PreventMidSongPause=on` in `RSMods.ini` — does the song keep playing?
 
-`RSMods_debug.txt` will still say `1.2.7.4` (version string deliberately unchanged).
+`RSMods_debug.txt` reports the build as `1.2.7.4-arp.N` on its first line (bumped per
+installed build from 12 Sep 2026; `_RSMODS_VERSION` in `dllmain.cpp`).
 It should now also show `(BUG PREVENTION) Fixed Calibration At High Framerates` — if
 it instead says the calibration fix was **skipped**, the hook site bytes did not
 match and that offset needs revisiting.
